@@ -34,7 +34,14 @@ class CalendarGestureManager {
   }
 
   handlePointerDown(e) {
-    // Only handle gestures within the calendar view containers
+    // Don't capture gestures inside scrollable week grid container
+    const scrollContainer = e.target.closest('#week-grid-container');
+    if (scrollContainer) {
+      // Allow native scrolling in week view
+      return;
+    }
+    
+    // Only handle gestures within the calendar view containers (month view or week header)
     const target = e.target.closest('.calendar-month, .calendar-week');
     
     if (target) {

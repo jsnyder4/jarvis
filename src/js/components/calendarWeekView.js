@@ -47,7 +47,7 @@ class CalendarWeekView {
     const hours = Array.from({ length: 24 }, (_, i) => i);
 
     this.container.innerHTML = `
-      <div class="calendar-week h-full flex flex-col">
+      <div class="calendar-week h-full flex flex-col select-none">
         <!-- Header with navigation -->
         <div class="flex items-center justify-between mb-4 flex-shrink-0">
           <h2 class="text-3xl font-bold text-gray-800">${weekLabel}</h2>
@@ -64,9 +64,19 @@ class CalendarWeekView {
           </div>
         </div>
 
-        <!-- Week grid -->
+        <!-- Week grid with custom scrollbar styles -->
+        <style>
+          #week-grid-container::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+          }
+          #week-grid-container {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
+          }
+        </style>
         <div class="flex-1 overflow-auto min-h-0" id="week-grid-container" style="-webkit-overflow-scrolling: touch; touch-action: pan-y;">
-          <div class="grid grid-cols-8 gap-0">
+          <div class="grid grid-cols-8 gap-0 week-grid-content">
             <!-- Header row with day names -->
             <div class="sticky top-0 bg-gray-50 z-10 border-b-2 border-gray-300"></div>
             ${weekDays.map(date => {
