@@ -7,14 +7,17 @@ class CalendarGestureManager {
     this.currentView = 'month'; // Track which view is active
     
     this.pointerStartX = 0;
+    this.pointerStartY = 0;
     this.pointerTarget = null;
     this.isTrackpadSwipe = false;
     this.isNavigating = false;
     this.wheelDeltaX = 0;
     this.wheelTimeout = null;
+    this.gestureDirectionDetermined = false;
+    this.isHorizontalGesture = false;
     
     this.minSwipeDistance = 50;
-    this.wheelThreshold = 25; // Reduced from 30 for faster trigger with smaller swipes
+    this.wheelThreshold = 25;
     
     this.setupListeners();
   }
