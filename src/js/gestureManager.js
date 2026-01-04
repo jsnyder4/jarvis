@@ -62,31 +62,44 @@ class CalendarGestureManager {
   }
 
   handlePointerMove(e) {
-    if (this.pointerTarget && e.pointerType !== 'mouse') {
-      // Allow vertical scrolling, only prevent horizontal swiping
+    if (this.pointerTarget) {
       const deltaX = Math.abs(e.clientX - this.pointerStartX);
       const deltaY = Math.abs(e.clientY - this.pointerStartY);
       
-      console.log('[POINTER MOVE]', { deltaX, deltaY, preventing: deltaX > deltaY && deltaX > 10 });
+      console.log('[POINTER MOVE]', { deltaX, deltaY, determined: this.gestureDirectionDetermined });
       
-      // Only prevent default if this is primarily a horizontal gesture
-      if (deltaX > deltaY && deltaX > 10) {
-        console.log('[PREVENTING] Default - horizontal swipe detected');
-        e.preventDefault();
-      } else {
-        console.log('[ALLOWING] Native scroll - vertical movement');
+      // Determine gesture direction once we have enough movement (15px threshold)
+      if (!this.gestureDirectionDetermined && (deltaX > 15 || deltaY > 15)) {
+        this.gestureDirectionDetermined = true;
+        
+        if (deltaX > deltaY) {
+          // Horizontal gesture - we'll handle it for week/month navigation
+          console.log('[DIRECTION] Horizontal - will capture for navigation');
+          this.isHorizontalGesture = true;
+          e.preventDefault(); // Prevent scrolling for horizontal swipes
+        } else {
+          // Vertical gesture - allow native scrolling
+          console.log('[DIRECTION] Vertical - allowing native scroll');
+          this.isHorizontalGesture = false;
+          // Don't preventDefault - let it scroll naturally
+        }
       }
-      // Vertical gestures are allowed to scroll naturally
+      
+      // Continue preventing default if we determined this is horizontal
+      if (this.gestureDirectionDetermined && this.isHorizontalGesture) {
+        e.preventDefault();
+      }
     }
   }
 
   handlePointerUp(e) {
     console.log('[POINTER UP]', { 
       hadTarget: !!this.pointerTarget,
-      wasTrackpad: this.isTrackpadSwipe 
+      wasTrackpad: this.isTrackpadSwipe,
+      wasHorizontal: this.isHorizontalGesture
     });
     
-    if (this.pointerTarget && !this.isTrackpadSwipe) {
+    if (this.pointerTarget && !this.isTrackpadSwipe && this.isHorizontalGesture) {
       const pointerEndX = e.clientX;
       const swipeDistance = pointerEndX - this.pointerStartX;
       
@@ -109,9 +122,11 @@ class CalendarGestureManager {
           this.isNavigating = false;
         }, 50);
       }
-      
-      this.pointerTarget = null;
     }
+    
+    this.pointerTarget = null;
+    this.gestureDirectionDetermined = false;
+    this.isHorizontalGesture = false;
   }
 
   handleWheel(e) {
