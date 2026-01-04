@@ -83,7 +83,7 @@ class WeatherService {
         windUnit: windUnit,
         precipUnit: precipUnit
       },
-      forecast: daily.time.slice(0, this.forecastDays).map((date, index) => ({
+      forecast: daily.time.map((date, index) => ({
         date: date,
         dayName: this.getDayName(date),
         tempMax: Math.round(daily.temperature_2m_max[index]),

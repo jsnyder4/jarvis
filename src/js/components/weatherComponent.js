@@ -49,7 +49,7 @@ class WeatherComponent {
       </div>
 
       <!-- Forecast -->
-      <div class="grid grid-cols-7 gap-3">
+      <div class="grid gap-3" style="grid-template-columns: repeat(${forecast.length}, minmax(0, 1fr));">
         ${forecast.map(day => `
           <div class="bg-white rounded-xl p-4 text-center shadow-lg hover:shadow-xl transition-shadow">
             <div class="font-semibold text-gray-700 mb-2">${day.dayName}</div>
