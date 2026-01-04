@@ -2,12 +2,21 @@
 
 class WeatherService {
   constructor() {
-    // Default location - you can change this or make it configurable
-    this.latitude = 40.0150;  // Columbus, OH area
-    this.longitude = -83.0758;
+    // Get location from config
+    const config = window.CONFIG || {};
+    const location = config.location || {};
+    const weatherConfig = config.weather || {};
+    
+    this.latitude = location.latitude || 40.0150;
+    this.longitude = location.longitude || -83.0758;
+    this.temperatureUnit = weatherConfig.temperatureUnit || 'fahrenheit';
+    this.windSpeedUnit = weatherConfig.windSpeedUnit || 'mph';
+    this.precipitationUnit = weatherConfig.precipitationUnit || 'inch';
+    this.forecastDays = weatherConfig.forecastDays || 7;
+    
     this.cache = null;
     this.lastFetch = null;
-    this.cacheDuration = 15 * 60 * 1000; // 15 minutes
+    this.cacheDuration = (weatherConfig.refreshInterval || 15) * 60 * 1000;
   }
 
   setLocation(latitude, longitude) {
@@ -28,11 +37,11 @@ class WeatherService {
         `longitude=${this.longitude}&` +
         `current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m&` +
         `daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&` +
-        `temperature_unit=fahrenheit&` +
-        `wind_speed_unit=mph&` +
-        `precipitation_unit=inch&` +
+        `temperature_unit=${this.temperatureUnit}&` +
+        `wind_speed_unit=${this.windSpeedUnit}&` +
+        `precipitation_unit=${this.precipitationUnit}&` +
         `timezone=auto&` +
-        `forecast_days=7`;
+        `forecast_days=${this.forecastDays}`;
 
       const response = await fetch(url);
       if (!response.ok) {
@@ -55,6 +64,9 @@ class WeatherService {
   formatWeatherData(data) {
     const current = data.current;
     const daily = data.daily;
+    const tempUnit = this.temperatureUnit === 'fahrenheit' ? '°F' : '°C';
+    const windUnit = this.windSpeedUnit;
+    const precipUnit = this.precipitationUnit === 'inch' ? '"' : 'mm';
 
     return {
       current: {
@@ -66,9 +78,12 @@ class WeatherService {
         weatherCode: current.weather_code,
         isDay: current.is_day === 1,
         condition: this.getWeatherCondition(current.weather_code),
-        icon: this.getWeatherIcon(current.weather_code, current.is_day === 1)
+        icon: this.getWeatherIcon(current.weather_code, current.is_day === 1),
+        tempUnit: tempUnit,
+        windUnit: windUnit,
+        precipUnit: precipUnit
       },
-      forecast: daily.time.slice(0, 7).map((date, index) => ({
+      forecast: daily.time.slice(0, this.forecastDays).map((date, index) => ({
         date: date,
         dayName: this.getDayName(date),
         tempMax: Math.round(daily.temperature_2m_max[index]),
@@ -76,7 +91,8 @@ class WeatherService {
         precipProbability: daily.precipitation_probability_max[index],
         weatherCode: daily.weather_code[index],
         condition: this.getWeatherCondition(daily.weather_code[index]),
-        icon: this.getWeatherIcon(daily.weather_code[index], true)
+        icon: this.getWeatherIcon(daily.weather_code[index], true),
+        tempUnit: tempUnit
       }))
     };
   }

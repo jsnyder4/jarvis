@@ -26,9 +26,9 @@ class WeatherComponent {
       <div class="bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl p-8 text-white shadow-xl mb-6">
         <div class="flex items-center justify-between">
           <div>
-            <div class="text-6xl font-bold mb-2">${current.temperature}°F</div>
+            <div class="text-6xl font-bold mb-2">${current.temperature}${current.tempUnit}</div>
             <div class="text-2xl mb-1">${current.condition}</div>
-            <div class="text-lg opacity-90">Feels like ${current.feelsLike}°F</div>
+            <div class="text-lg opacity-90">Feels like ${current.feelsLike}${current.tempUnit}</div>
           </div>
           <div class="text-9xl">${current.icon}</div>
         </div>
@@ -39,16 +39,16 @@ class WeatherComponent {
           </div>
           <div>
             <div class="text-sm opacity-75">Wind</div>
-            <div class="text-xl font-semibold">${current.windSpeed} mph</div>
+            <div class="text-xl font-semibold">${current.windSpeed} ${current.windUnit}</div>
           </div>
           <div>
             <div class="text-sm opacity-75">Precip</div>
-            <div class="text-xl font-semibold">${current.precipitation}"</div>
+            <div class="text-xl font-semibold">${current.precipitation}${current.precipUnit}</div>
           </div>
         </div>
       </div>
 
-      <!-- 7-Day Forecast -->
+      <!-- Forecast -->
       <div class="grid grid-cols-7 gap-3">
         ${forecast.map(day => `
           <div class="bg-white rounded-xl p-4 text-center shadow-lg hover:shadow-xl transition-shadow">

@@ -4,23 +4,36 @@ class TimeComponent {
   constructor(containerId) {
     this.container = document.getElementById(containerId);
     this.updateInterval = null;
+    
+    // Get time config
+    const config = window.CONFIG || {};
+    const timeConfig = config.time || {};
+    this.use24Hour = timeConfig.use24Hour || false;
+    this.showSeconds = timeConfig.showSeconds || false;
+    this.dateFormat = timeConfig.dateFormat || {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    };
   }
 
   render() {
     if (!this.container) return;
 
     const now = new Date();
-    const timeString = now.toLocaleTimeString('en-US', {
+    const timeOptions = {
       hour: 'numeric',
       minute: '2-digit',
-      hour12: true
-    });
-    const dateString = now.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
+      hour12: !this.use24Hour
+    };
+    
+    if (this.showSeconds) {
+      timeOptions.second = '2-digit';
+    }
+    
+    const timeString = now.toLocaleTimeString('en-US', timeOptions);
+    const dateString = now.toLocaleDateString('en-US', this.dateFormat);
 
     this.container.innerHTML = `
       <div class="text-center">
