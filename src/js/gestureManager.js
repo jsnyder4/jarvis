@@ -34,9 +34,19 @@ class CalendarGestureManager {
   }
 
   handlePointerDown(e) {
+    console.log('[POINTER DOWN]', {
+      type: e.pointerType,
+      target: e.target.className,
+      closest_week_grid: !!e.target.closest('#week-grid-container'),
+      closest_calendar: !!e.target.closest('.calendar-month, .calendar-week'),
+      x: e.clientX,
+      y: e.clientY
+    });
+    
     // Don't capture gestures inside scrollable week grid container
     const scrollContainer = e.target.closest('#week-grid-container');
     if (scrollContainer) {
+      console.log('[ALLOWING] Native scroll - inside week grid container');
       // Allow native scrolling in week view
       return;
     }
@@ -45,6 +55,7 @@ class CalendarGestureManager {
     const target = e.target.closest('.calendar-month, .calendar-week');
     
     if (target) {
+      console.log('[CAPTURING] Gesture - setting up swipe detection');
       this.pointerStartX = e.clientX;
       this.pointerStartY = e.clientY;
       this.pointerTarget = target;
@@ -58,21 +69,34 @@ class CalendarGestureManager {
       const deltaX = Math.abs(e.clientX - this.pointerStartX);
       const deltaY = Math.abs(e.clientY - this.pointerStartY);
       
+      console.log('[POINTER MOVE]', { deltaX, deltaY, preventing: deltaX > deltaY && deltaX > 10 });
+      
       // Only prevent default if this is primarily a horizontal gesture
       if (deltaX > deltaY && deltaX > 10) {
+        console.log('[PREVENTING] Default - horizontal swipe detected');
         e.preventDefault();
+      } else {
+        console.log('[ALLOWING] Native scroll - vertical movement');
       }
       // Vertical gestures are allowed to scroll naturally
     }
   }
 
   handlePointerUp(e) {
+    console.log('[POINTER UP]', { 
+      hadTarget: !!this.pointerTarget,
+      wasTrackpad: this.isTrackpadSwipe 
+    });
+    
     if (this.pointerTarget && !this.isTrackpadSwipe) {
       const pointerEndX = e.clientX;
       const swipeDistance = pointerEndX - this.pointerStartX;
       
+      console.log('[SWIPE CHECK]', { distance: swipeDistance, threshold: this.minSwipeDistance });
+      
       if (Math.abs(swipeDistance) > this.minSwipeDistance && !this.isNavigating) {
         this.isNavigating = true;
+        console.log('[NAVIGATING]', swipeDistance > 0 ? 'PREVIOUS' : 'NEXT');
         
         if (swipeDistance > 0) {
           // Swipe right - previous
@@ -85,7 +109,7 @@ class CalendarGestureManager {
         // Cooldown to prevent consecutive swipes
         setTimeout(() => {
           this.isNavigating = false;
-        }, 50); // Reduced to 50ms to match trackpad cooldown
+        }, 50);
       }
       
       this.pointerTarget = null;
