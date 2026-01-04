@@ -1,0 +1,20 @@
+{
+  "name": "jarvis-app",
+  "version": "1.0.0",
+  "description": "Jarvis Family Dashboard for Raspberry Pi",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "NODE_ENV=development electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["dashboard", "electron", "raspberry-pi"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^39.2.7",
+    "electron-reload": "^2.0.0-alpha.1",
+    "tailwindcss": "^4.1.18"
+  }
+}
