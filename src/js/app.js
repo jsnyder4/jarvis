@@ -1,26 +1,25 @@
 // Main application entry point
 console.log('Jarvis Dashboard starting...');
 
-let timeComponent;
-let weatherComponent;
-
 // Initialize the app
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM loaded, initializing components...');
+  console.log('DOM loaded, initializing navigation system...');
   
-  // Initialize time component
-  timeComponent = new TimeComponent('time-container');
-  timeComponent.start();
+  // Register all pages
+  const homePage = new HomePage();
+  const weatherPage = new WeatherPage();
+  const calendarPage = new CalendarPage();
+  const sportsPage = new SportsPage();
+  const listsPage = new ListsPage();
   
-  // Initialize weather component
-  weatherComponent = new WeatherComponent('weather-container');
-  weatherComponent.start();
+  pageManager.registerPage('home', homePage);
+  pageManager.registerPage('weather', weatherPage);
+  pageManager.registerPage('calendar', calendarPage);
+  pageManager.registerPage('sports', sportsPage);
+  pageManager.registerPage('lists', listsPage);
   
-  console.log('✅ Jarvis Dashboard ready!');
-});
-
-// Cleanup on page unload
-window.addEventListener('beforeunload', () => {
-  if (timeComponent) timeComponent.stop();
-  if (weatherComponent) weatherComponent.stop();
+  // Navigate to home page by default
+  pageManager.navigateTo('home');
+  
+  console.log('✅ Jarvis Dashboard ready with navigation!');
 });

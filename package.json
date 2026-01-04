@@ -4,11 +4,15 @@
   "description": "Jarvis Family Dashboard for Raspberry Pi",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
-    "dev": "NODE_ENV=development electron .",
+    "start": "electron . 2>/dev/null",
+    "dev": "NODE_ENV=development electron . 2>/dev/null",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["dashboard", "electron", "raspberry-pi"],
+  "keywords": [
+    "dashboard",
+    "electron",
+    "raspberry-pi"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",

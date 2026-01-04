@@ -66,16 +66,31 @@ const CONFIG = {
   calendar: {
     // iCal feed URLs - add your calendar URLs here
     feeds: [
-      // Example:
+      // Example Google Calendar:
+      // 1. Go to Google Calendar settings
+      // 2. Find "Integrate calendar" section
+      // 3. Copy the "Secret address in iCal format" URL
       // {
-      //   url: 'https://calendar.google.com/calendar/ical/YOUR_CALENDAR_ID/basic.ics',
+      //   url: 'https://calendar.google.com/calendar/ical/YOUR_CALENDAR_ID%40group.calendar.google.com/private-XXXXX/basic.ics',
       //   name: 'Family Calendar',
       //   color: '#3b82f6'  // Blue
       // },
+      
+      // Example Outlook/Office 365:
+      // 1. Go to Outlook.com calendar
+      // 2. Settings → View all Outlook settings → Calendar → Shared calendars
+      // 3. Publish calendar and copy ICS link
       // {
-      //   url: 'https://outlook.office365.com/owa/calendar/YOUR_CALENDAR/calendar.ics',
+      //   url: 'https://outlook.office365.com/owa/calendar/XXXXX@outlook.com/YYYY/calendar.ics',
       //   name: 'Work Calendar',
       //   color: '#ef4444'  // Red
+      // },
+      
+      // Example Apple iCloud Calendar:
+      // {
+      //   url: 'webcal://p##-caldav.icloud.com/published/2/XXXXX',
+      //   name: 'Personal',
+      //   color: '#10b981'  // Green
       // }
     ],
     

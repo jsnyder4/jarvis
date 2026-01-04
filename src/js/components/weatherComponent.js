@@ -9,7 +9,7 @@ class WeatherComponent {
 
   async fetchAndRender() {
     try {
-      this.weatherData = await weatherService.getCurrentWeather();
+      this.weatherData = await weatherService.getInstance().getCurrentWeather();
       this.render();
     } catch (error) {
       this.renderError();
@@ -24,7 +24,7 @@ class WeatherComponent {
     this.container.innerHTML = `
       <!-- Current Weather -->
       <div class="bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl p-8 text-white shadow-xl mb-6">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between mb-6">
           <div>
             <div class="text-6xl font-bold mb-2">${current.temperature}${current.tempUnit}</div>
             <div class="text-2xl mb-1">${current.condition}</div>
@@ -32,7 +32,7 @@ class WeatherComponent {
           </div>
           <div class="text-9xl">${current.icon}</div>
         </div>
-        <div class="mt-6 grid grid-cols-3 gap-4 text-center">
+        <div class="grid grid-cols-5 gap-4 text-center">
           <div>
             <div class="text-sm opacity-75">Humidity</div>
             <div class="text-xl font-semibold">${current.humidity}%</div>
@@ -45,25 +45,45 @@ class WeatherComponent {
             <div class="text-sm opacity-75">Precip</div>
             <div class="text-xl font-semibold">${current.precipitation}${current.precipUnit}</div>
           </div>
+          <div>
+            <div class="text-sm opacity-75">Pressure</div>
+            <div class="text-xl font-semibold">${current.pressure} mb</div>
+          </div>
+          <div>
+            <div class="text-sm opacity-75">UV Index</div>
+            <div class="text-xl font-semibold">${current.uvIndex}</div>
+          </div>
         </div>
       </div>
 
-      <!-- Forecast -->
-      <div class="grid gap-3" style="grid-template-columns: repeat(${forecast.length}, minmax(0, 1fr));">
-        ${forecast.map(day => `
-          <div class="bg-white rounded-xl p-4 text-center shadow-lg hover:shadow-xl transition-shadow">
-            <div class="font-semibold text-gray-700 mb-2">${day.dayName}</div>
-            <div class="text-4xl mb-2">${day.icon}</div>
-            <div class="text-sm text-gray-600 mb-1">${day.condition}</div>
-            <div class="flex justify-center gap-2 text-lg">
-              <span class="font-bold text-red-600">${day.tempMax}°</span>
-              <span class="text-blue-600">${day.tempMin}°</span>
-            </div>
-            ${day.precipProbability ? `
-              <div class="text-xs text-blue-500 mt-1">
-                ${day.precipProbability}% 💧
+      <!-- Forecast - 2 rows of 7 days -->
+      <div class="space-y-3">
+        ${[0, 7].map(rowStart => `
+          <div class="grid grid-cols-7 gap-3">
+            ${forecast.slice(rowStart, rowStart + 7).map(day => `
+              <div class="bg-white rounded-xl p-4 text-center shadow-lg hover:shadow-xl transition-shadow">
+                <div class="font-semibold text-gray-700 mb-1">${day.dayName}</div>
+                <div class="text-sm text-gray-500 mb-2">${day.dateShort}</div>
+                <div class="text-5xl mb-2">${day.icon}</div>
+                <div class="text-xs text-gray-600 mb-2">${day.condition}</div>
+                <div class="flex justify-center gap-2 text-xl font-bold mb-2">
+                  <span class="text-red-600">${day.tempMax}°</span>
+                  <span class="text-blue-600">${day.tempMin}°</span>
+                </div>
+                <div class="text-xs text-gray-600 space-y-1">
+                  ${day.precipProbability ? `
+                    <div class="flex items-center justify-center gap-1">
+                      <span>💧</span>
+                      <span>${day.precipProbability}%</span>
+                    </div>
+                  ` : ''}
+                  <div class="flex items-center justify-center gap-1">
+                    <span>💨</span>
+                    <span>${day.windSpeed} ${day.windUnit}</span>
+                  </div>
+                </div>
               </div>
-            ` : ''}
+            `).join('')}
           </div>
         `).join('')}
       </div>
