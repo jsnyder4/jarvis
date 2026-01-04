@@ -43,16 +43,17 @@ class CalendarGestureManager {
       y: e.clientY
     });
     
+    // CRITICAL: Check for week grid container FIRST (most specific)
     // Don't capture gestures inside scrollable week grid container
     const scrollContainer = e.target.closest('#week-grid-container');
     if (scrollContainer) {
       console.log('[ALLOWING] Native scroll - inside week grid container');
-      // Allow native scrolling in week view
+      // Allow native scrolling in week view - DON'T set pointerTarget
       return;
     }
     
-    // Only handle gestures within the calendar view containers (month view or week header)
-    const target = e.target.closest('.calendar-month, .calendar-week');
+    // Only handle gestures within calendar containers (month view or week view header)
+    const target = e.target.closest('.calendar-month');
     
     if (target) {
       console.log('[CAPTURING] Gesture - setting up swipe detection');
@@ -60,6 +61,8 @@ class CalendarGestureManager {
       this.pointerStartY = e.clientY;
       this.pointerTarget = target;
       this.isTrackpadSwipe = false;
+    } else {
+      console.log('[IGNORING] Not in capturable area');
     }
   }
 
