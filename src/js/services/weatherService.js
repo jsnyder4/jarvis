@@ -28,10 +28,12 @@ class WeatherService {
   async getCurrentWeather() {
     // Check cache first
     if (this.cache && this.lastFetch && (Date.now() - this.lastFetch < this.cacheDuration)) {
+      console.log('Using cached weather data');
       return this.cache;
     }
 
     try {
+      console.log(`Fetching weather for ${this.forecastDays} days...`);
       const url = `https://api.open-meteo.com/v1/forecast?` +
         `latitude=${this.latitude}&` +
         `longitude=${this.longitude}&` +
@@ -43,6 +45,7 @@ class WeatherService {
         `timezone=auto&` +
         `forecast_days=${this.forecastDays}`;
 
+      console.log('Weather API URL:', url);
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`Weather API error: ${response.status}`);
@@ -53,6 +56,8 @@ class WeatherService {
       // Cache the result
       this.cache = this.formatWeatherData(data);
       this.lastFetch = Date.now();
+      
+      console.log(`Weather data formatted: ${this.cache.forecast.length} days`);
       
       return this.cache;
     } catch (error) {
