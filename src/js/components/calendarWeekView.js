@@ -65,7 +65,7 @@ class CalendarWeekView {
         </div>
 
         <!-- Week grid -->
-        <div class="flex-1 overflow-auto min-h-0" id="week-grid-container">
+        <div class="flex-1 overflow-auto min-h-0" id="week-grid-container" style="-webkit-overflow-scrolling: touch; touch-action: pan-y;">
           <div class="grid grid-cols-8 gap-0">
             <!-- Header row with day names -->
             <div class="sticky top-0 bg-gray-50 z-10 border-b-2 border-gray-300"></div>

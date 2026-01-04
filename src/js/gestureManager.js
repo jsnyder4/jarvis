@@ -47,14 +47,15 @@ class CalendarGestureManager {
 
   handlePointerMove(e) {
     if (this.pointerTarget && e.pointerType !== 'mouse') {
-      // Prevent default for touch to avoid scrolling while swiping
-      // But allow vertical scrolling if it's primarily vertical
+      // Allow vertical scrolling, only prevent horizontal swiping
       const deltaX = Math.abs(e.clientX - this.pointerStartX);
-      const deltaY = Math.abs(e.clientY - (this.pointerStartY || e.clientY));
+      const deltaY = Math.abs(e.clientY - this.pointerStartY);
       
-      if (deltaX > deltaY) {
+      // Only prevent default if this is primarily a horizontal gesture
+      if (deltaX > deltaY && deltaX > 10) {
         e.preventDefault();
       }
+      // Vertical gestures are allowed to scroll naturally
     }
   }
 
