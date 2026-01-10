@@ -16,7 +16,7 @@ class CalendarPage extends BasePage {
     this.container.innerHTML = `
       <div class="h-full flex flex-col pb-20 px-8 pt-6">
         <div class="flex items-center justify-between mb-4 flex-shrink-0">
-          <h1 class="text-4xl font-bold text-gray-800">Calendar</h1>
+          <h1 class="text-2xl font-bold text-gray-800">Calendar</h1>
           
           <!-- Modern segmented control for view switcher -->
           <div class="inline-flex bg-gray-100 rounded-xl p-1 shadow-inner">
@@ -77,10 +77,7 @@ class CalendarPage extends BasePage {
     // Expose page instance globally for button clicks
     window.calendarPage = this;
     
-    // Initialize gesture manager for swipe navigation
-    if (!this.gestureManager) {
-      this.gestureManager = new CalendarGestureManager(this.monthView, this.weekView);
-    }
+    // Initialize gesture manager after views are created - will be done in renderCurrentView
   }
 
   renderNoCalendars() {
@@ -126,6 +123,15 @@ class CalendarPage extends BasePage {
       this.renderMonthView();
     } else {
       this.renderWeekView();
+    }
+    
+    // Initialize gesture manager after views exist
+    if (!this.gestureManager && this.monthView && this.weekView) {
+      this.gestureManager = new CalendarGestureManager(this.monthView, this.weekView);
+      this.gestureManager.setCurrentView(this.currentView);
+    } else if (this.gestureManager) {
+      // Update current view if gesture manager already exists
+      this.gestureManager.setCurrentView(this.currentView);
     }
   }
 

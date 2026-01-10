@@ -11,7 +11,7 @@ class WeatherPage extends BasePage {
 
     this.container.innerHTML = `
       <div class="h-full overflow-y-auto pb-24 px-8 pt-8">
-        <h1 class="text-5xl font-bold text-gray-800 mb-6">Weather Forecast</h1>
+        <h1 class="text-2xl font-bold text-gray-800 mb-6">Weather</h1>
         <div id="weather-full-container"></div>
       </div>
     `;

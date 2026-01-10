@@ -144,6 +144,40 @@ const CONFIG = {
   },
 
   // ====================
+  // PHOTO GALLERY SETTINGS (Phase 6)
+  // ====================
+  photos: {
+    // Google Photos shared album links
+    // Get link by: Open album → Share → Copy link
+    albums: [
+      {
+        name: 'Family Photos',
+        url: 'https://photos.app.goo.gl/Qa8cRhkTVVvVETTB7'
+      }
+      // Add more albums as needed:
+      // {
+      //   name: 'Vacation 2023',
+      //   url: 'https://photos.app.goo.gl/another-link'
+      // }
+    ],
+    
+    // Slideshow interval in seconds (how long to show each photo)
+    slideshowInterval: 5,
+    
+    // Transition effect: 'fade' or 'slide'
+    transitionEffect: 'fade',
+    
+    // Transition duration in milliseconds
+    transitionDuration: 1000,
+    
+    // Photo order: 'random' or 'sequential'
+    photoOrder: 'random',
+    
+    // Refresh albums for new photos (in minutes)
+    refreshInterval: 60
+  },
+
+  // ====================
   // VOICE SETTINGS (Phase 9 - Future)
   // ====================
   voice: {

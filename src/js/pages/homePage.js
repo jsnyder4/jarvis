@@ -1,67 +1,68 @@
-// Home Page - Dashboard overview
+// Home Page - Dashboard with navigation tiles
 
 class HomePage extends BasePage {
   constructor() {
     super('home', 'page-home');
-    this.timeComponent = null;
-    this.weatherComponent = null;
   }
 
   render() {
     if (!this.container) return;
 
     this.container.innerHTML = `
-      <div class="h-full overflow-y-auto pb-24 px-8 pt-8">
-        <!-- Time Display -->
-        <div id="home-time-container" class="mb-6"></div>
-        
-        <!-- Weather Summary -->
-        <div id="home-weather-container"></div>
-        
-        <!-- Quick Links Grid -->
-        <div class="mt-8 grid grid-cols-3 gap-6">
-          <button onclick="pageManager.navigateTo('calendar')" class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl shadow-lg hover:shadow-xl transition-all border border-purple-200">
-            <div class="text-5xl mb-3">📅</div>
-            <h3 class="text-2xl font-bold text-purple-800">Calendar</h3>
-            <p class="text-purple-600 text-sm mt-1">View events</p>
+      <div class="h-full flex items-center justify-center pb-24 px-8 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <!-- Navigation Tiles Grid -->
+        <div class="grid grid-cols-3 gap-8 max-w-6xl w-full">
+          <!-- Weather Tile -->
+          <button onclick="pageManager.navigateTo('weather')" class="bg-gradient-to-br from-sky-400 to-blue-500 p-10 rounded-2xl shadow-2xl hover:shadow-3xl hover:scale-105 transition-all transform">
+            <div class="text-7xl mb-4">🌤️</div>
+            <h3 class="text-3xl font-bold text-white mb-2">Weather</h3>
+            <p class="text-blue-100 text-base">Forecast & conditions</p>
           </button>
           
-          <button onclick="pageManager.navigateTo('sports')" class="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl shadow-lg hover:shadow-xl transition-all border border-green-200">
-            <div class="text-5xl mb-3">⚽</div>
-            <h3 class="text-2xl font-bold text-green-800">Sports</h3>
-            <p class="text-green-600 text-sm mt-1">Scores & standings</p>
+          <!-- Calendar Tile -->
+          <button onclick="pageManager.navigateTo('calendar')" class="bg-gradient-to-br from-purple-400 to-purple-600 p-10 rounded-2xl shadow-2xl hover:shadow-3xl hover:scale-105 transition-all transform">
+            <div class="text-7xl mb-4">📅</div>
+            <h3 class="text-3xl font-bold text-white mb-2">Calendar</h3>
+            <p class="text-purple-100 text-base">Events & schedule</p>
           </button>
           
-          <button onclick="pageManager.navigateTo('lists')" class="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl shadow-lg hover:shadow-xl transition-all border border-orange-200">
-            <div class="text-5xl mb-3">📝</div>
-            <h3 class="text-2xl font-bold text-orange-800">Lists</h3>
-            <p class="text-orange-600 text-sm mt-1">Shopping & tasks</p>
+          <!-- Photos Tile -->
+          <button onclick="pageManager.navigateTo('photos')" class="bg-gradient-to-br from-pink-400 to-rose-500 p-10 rounded-2xl shadow-2xl hover:shadow-3xl hover:scale-105 transition-all transform">
+            <div class="text-7xl mb-4">📷</div>
+            <h3 class="text-3xl font-bold text-white mb-2">Photos</h3>
+            <p class="text-pink-100 text-base">Family memories</p>
           </button>
+          
+          <!-- Sports Tile -->
+          <button onclick="pageManager.navigateTo('sports')" class="bg-gradient-to-br from-green-400 to-emerald-600 p-10 rounded-2xl shadow-2xl hover:shadow-3xl hover:scale-105 transition-all transform">
+            <div class="text-7xl mb-4">⚽</div>
+            <h3 class="text-3xl font-bold text-white mb-2">Sports</h3>
+            <p class="text-green-100 text-base">Scores & standings</p>
+          </button>
+          
+          <!-- Lists Tile -->
+          <button onclick="pageManager.navigateTo('lists')" class="bg-gradient-to-br from-orange-400 to-amber-500 p-10 rounded-2xl shadow-2xl hover:shadow-3xl hover:scale-105 transition-all transform">
+            <div class="text-7xl mb-4">📝</div>
+            <h3 class="text-3xl font-bold text-white mb-2">Lists</h3>
+            <p class="text-orange-100 text-base">Shopping & tasks</p>
+          </button>
+
+          <!-- Placeholder for future -->
+          <div class="bg-gradient-to-br from-gray-200 to-gray-300 p-10 rounded-2xl shadow-xl opacity-50">
+            <div class="text-7xl mb-4">➕</div>
+            <h3 class="text-3xl font-bold text-gray-600 mb-2">More</h3>
+            <p class="text-gray-500 text-base">Coming soon</p>
+          </div>
         </div>
       </div>
     `;
   }
 
   onShow() {
-    // Initialize time component
-    if (!this.timeComponent) {
-      this.timeComponent = new TimeComponent('home-time-container');
-    }
-    this.timeComponent.start();
-
-    // Initialize weather component (compact version)
-    if (!this.weatherComponent) {
-      this.weatherComponent = new WeatherComponent('home-weather-container');
-    }
-    this.weatherComponent.start();
+    // No components to initialize - just static tiles
   }
 
   onHide() {
-    if (this.timeComponent) {
-      this.timeComponent.stop();
-    }
-    if (this.weatherComponent) {
-      this.weatherComponent.stop();
-    }
+    // Nothing to clean up
   }
 }

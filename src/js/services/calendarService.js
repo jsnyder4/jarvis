@@ -100,31 +100,41 @@ class CalendarService {
       const events = [];
       const now = new Date();
       const oneYearFromNow = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+      const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
 
       vevents.forEach(vevent => {
-        const event = new ICAL.Event(vevent);
-        
-        // Handle recurring events
-        if (event.isRecurring()) {
-          const expand = event.iterator();
-          let next;
-          let count = 0;
-          const maxOccurrences = 100; // Limit recurring events
+        try {
+          const event = new ICAL.Event(vevent);
           
-          while ((next = expand.next()) && count < maxOccurrences) {
-            const occurrence = this.createEventObject(event, feed, next);
-            if (occurrence.startDate > oneYearFromNow) break;
-            if (occurrence.endDate >= now) {
-              events.push(occurrence);
+          // Handle recurring events
+          if (event.isRecurring()) {
+            const expand = event.iterator();
+            let next;
+            let count = 0;
+            const maxOccurrences = 500; // Increased limit for year range
+            
+            while ((next = expand.next()) && count < maxOccurrences) {
+              try {
+                const occurrence = this.createEventObject(event, feed, next);
+                if (occurrence.startDate > oneYearFromNow) break;
+                if (occurrence.endDate >= oneYearAgo) {
+                  events.push(occurrence);
+                }
+                count++;
+              } catch (err) {
+                console.warn(`Skipping malformed recurring event occurrence from ${feed.name}:`, err.message);
+                count++;
+              }
             }
-            count++;
+          } else {
+            // Single event
+            const eventObj = this.createEventObject(event, feed);
+            if (eventObj.endDate >= oneYearAgo && eventObj.startDate <= oneYearFromNow) {
+              events.push(eventObj);
+            }
           }
-        } else {
-          // Single event
-          const eventObj = this.createEventObject(event, feed);
-          if (eventObj.endDate >= now && eventObj.startDate <= oneYearFromNow) {
-            events.push(eventObj);
-          }
+        } catch (err) {
+          console.warn(`Skipping malformed event from ${feed.name}:`, err.message);
         }
       });
 
@@ -136,22 +146,65 @@ class CalendarService {
   }
 
   createEventObject(event, feed, occurrenceTime = null) {
-    const startDate = occurrenceTime ? occurrenceTime.toJSDate() : event.startDate.toJSDate();
-    const duration = event.duration.toSeconds() * 1000; // Convert to milliseconds
-    const endDate = new Date(startDate.getTime() + duration);
+    try {
+      let startDate, endDate, isAllDay;
+      
+      // Try to get the start date
+      try {
+        startDate = occurrenceTime ? occurrenceTime.toJSDate() : event.startDate.toJSDate();
+      } catch (err) {
+        // If start date is malformed, try to parse it as a date-only value
+        console.warn(`Malformed start date for event "${event.summary}", treating as all-day`);
+        const dateStr = event.component.getFirstPropertyValue('dtstart').toString();
+        const dateMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (dateMatch) {
+          startDate = new Date(dateMatch[1], dateMatch[2] - 1, dateMatch[3]);
+          isAllDay = true;
+        } else {
+          throw new Error('Cannot parse date');
+        }
+      }
 
-    return {
-      id: event.uid + (occurrenceTime ? `-${occurrenceTime.toUnixTime()}` : ''),
-      title: event.summary || '(No title)',
-      description: event.description || '',
-      location: event.location || '',
-      startDate: startDate,
-      endDate: endDate,
-      isAllDay: this.isAllDayEvent(event),
-      calendarName: feed.name,
-      calendarColor: feed.color,
-      raw: event
-    };
+      // Try to get the end date
+      try {
+        const duration = event.duration.toSeconds() * 1000;
+        endDate = new Date(startDate.getTime() + duration);
+      } catch (err) {
+        // If duration/end date is malformed, assume 24-hour duration for all-day events
+        if (isAllDay) {
+          endDate = new Date(startDate);
+          endDate.setDate(endDate.getDate() + 1);
+          endDate.setMilliseconds(-1); // End of day
+        } else {
+          console.warn(`Malformed duration for event "${event.summary}", assuming all-day`);
+          isAllDay = true;
+          endDate = new Date(startDate);
+          endDate.setDate(endDate.getDate() + 1);
+          endDate.setMilliseconds(-1);
+        }
+      }
+
+      // Determine if all-day if not already set
+      if (isAllDay === undefined) {
+        isAllDay = this.isAllDayEvent(event);
+      }
+
+      return {
+        id: event.uid + (occurrenceTime ? `-${occurrenceTime.toUnixTime()}` : ''),
+        title: event.summary || '(No title)',
+        description: event.description || '',
+        location: event.location || '',
+        startDate: startDate,
+        endDate: endDate,
+        isAllDay: isAllDay,
+        calendarName: feed.name,
+        calendarColor: feed.color,
+        raw: event
+      };
+    } catch (err) {
+      // If all else fails, rethrow to skip this event
+      throw new Error(`Failed to create event object: ${err.message}`);
+    }
   }
 
   isAllDayEvent(event) {
