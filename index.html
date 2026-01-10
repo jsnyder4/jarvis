@@ -115,6 +115,13 @@
       -webkit-user-select: none;
       user-select: none;
       overscroll-behavior: contain;
+      overflow-y: scroll;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* IE/Edge */
+    }
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .sports-scroll::-webkit-scrollbar {
+      display: none;
     }
     /* Allow scrolling on touch devices */
     body {

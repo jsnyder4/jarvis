@@ -126,12 +126,12 @@ class SportsPage extends BasePage {
     contentContainer.innerHTML = `
       <div class="grid gap-6 h-full" style="grid-template-columns: 60% 38%;">
         <!-- Left: Standings (wider) -->
-        <div class="overflow-y-auto sports-scroll" style="max-height: calc(100vh - 280px); -webkit-overflow-scrolling: touch; touch-action: pan-y;">
+        <div class="sports-scroll" style="max-height: calc(100vh - 280px); -webkit-overflow-scrolling: touch; touch-action: pan-y; cursor: grab;">
           ${this.renderStandings(data.standings)}
         </div>
         
         <!-- Right: Scores (narrower) -->
-        <div class="overflow-y-auto sports-scroll" style="max-height: calc(100vh - 280px); -webkit-overflow-scrolling: touch; touch-action: pan-y;">
+        <div class="sports-scroll" style="max-height: calc(100vh - 280px); -webkit-overflow-scrolling: touch; touch-action: pan-y; cursor: grab;">
           ${this.renderScoreboard(data.scoreboard)}
         </div>
       </div>
