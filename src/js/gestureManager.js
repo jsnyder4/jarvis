@@ -42,9 +42,16 @@ class CalendarGestureManager {
       target: e.target.className,
       closest_week_grid: !!e.target.closest('#week-grid-container'),
       closest_calendar: !!e.target.closest('.calendar-month, .calendar-week'),
+      closest_sports_scroll: !!e.target.closest('.sports-scroll'),
       x: e.clientX,
       y: e.clientY
     });
+    
+    // Ignore touches in sports scroll containers
+    if (e.target.closest('.sports-scroll')) {
+      console.log('[IGNORING] Inside sports scroll container - allowing native scroll');
+      return;
+    }
     
     // Capture gestures in calendar views (both month and week)
     const target = e.target.closest('.calendar-month, .calendar-week');
