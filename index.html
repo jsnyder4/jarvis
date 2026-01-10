@@ -110,6 +110,17 @@
       opacity: 0;
       transition: transform 0.3s ease, opacity 0.3s ease;
     }
+    /* Prevent text selection and enable smooth touch scrolling */
+    .sports-scroll {
+      -webkit-user-select: none;
+      user-select: none;
+      overscroll-behavior: contain;
+    }
+    /* Allow scrolling on touch devices */
+    body {
+      -webkit-user-select: none;
+      user-select: none;
+    }
   </style>
 
   <!-- Load configuration first -->

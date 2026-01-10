@@ -13,7 +13,7 @@ class SportsPage extends BasePage {
 
     // Initial loading state
     this.container.innerHTML = `
-      <div class="h-full overflow-hidden pb-24">
+      <div class="h-full overflow-hidden pb-24 sports-page">
         <!-- Header -->
         <div class="px-8 pt-8 pb-4">
           <h1 class="text-2xl font-bold text-gray-800">Sports</h1>
