@@ -126,16 +126,55 @@ class SportsPage extends BasePage {
     contentContainer.innerHTML = `
       <div class="grid gap-6 h-full" style="grid-template-columns: 60% 38%;">
         <!-- Left: Standings (wider) -->
-        <div class="sports-scroll" style="max-height: calc(100vh - 280px); -webkit-overflow-scrolling: touch; touch-action: pan-y; cursor: grab;">
+        <div id="standings-scroll" class="sports-scroll" style="max-height: calc(100vh - 280px); -webkit-overflow-scrolling: touch; touch-action: pan-y; cursor: grab;">
           ${this.renderStandings(data.standings)}
         </div>
         
         <!-- Right: Scores (narrower) -->
-        <div class="sports-scroll" style="max-height: calc(100vh - 280px); -webkit-overflow-scrolling: touch; touch-action: pan-y; cursor: grab;">
+        <div id="scores-scroll" class="sports-scroll" style="max-height: calc(100vh - 280px); -webkit-overflow-scrolling: touch; touch-action: pan-y; cursor: grab;">
           ${this.renderScoreboard(data.scoreboard)}
         </div>
       </div>
     `;
+    
+    // Setup touch scrolling for both containers
+    this.setupTouchScroll('standings-scroll');
+    this.setupTouchScroll('scores-scroll');
+  }
+
+  setupTouchScroll(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+
+    let startY = 0;
+    let startScrollTop = 0;
+    let isDragging = false;
+
+    element.addEventListener('pointerdown', (e) => {
+      isDragging = true;
+      startY = e.clientY;
+      startScrollTop = element.scrollTop;
+      element.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+
+    element.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      
+      const deltaY = startY - e.clientY;
+      element.scrollTop = startScrollTop + deltaY;
+      e.preventDefault();
+    });
+
+    element.addEventListener('pointerup', () => {
+      isDragging = false;
+      element.style.cursor = 'grab';
+    });
+
+    element.addEventListener('pointerleave', () => {
+      isDragging = false;
+      element.style.cursor = 'grab';
+    });
   }
 
   renderScoreboard(scoreboard) {
