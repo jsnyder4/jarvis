@@ -6,6 +6,7 @@ class CalendarWeekView {
     this.currentDate = new Date();
     this.events = [];
     this.onEventClick = null;
+    this.touchScrollCleanup = null;
   }
 
   setEvents(events) {
@@ -119,35 +120,13 @@ class CalendarWeekView {
     const element = document.getElementById('week-grid-container');
     if (!element) return;
 
-    let startY = 0;
-    let startScrollTop = 0;
-    let isDragging = false;
+    // Clean up existing listeners first
+    if (this.touchScrollCleanup) {
+      this.touchScrollCleanup();
+    }
 
-    element.addEventListener('pointerdown', (e) => {
-      isDragging = true;
-      startY = e.clientY;
-      startScrollTop = element.scrollTop;
-      element.style.cursor = 'grabbing';
-      e.preventDefault();
-    });
-
-    element.addEventListener('pointermove', (e) => {
-      if (!isDragging) return;
-      
-      const deltaY = startY - e.clientY;
-      element.scrollTop = startScrollTop + deltaY;
-      e.preventDefault();
-    });
-
-    element.addEventListener('pointerup', () => {
-      isDragging = false;
-      element.style.cursor = 'grab';
-    });
-
-    element.addEventListener('pointerleave', () => {
-      isDragging = false;
-      element.style.cursor = 'grab';
-    });
+    // Use shared touch scroll helper
+    this.touchScrollCleanup = TouchScrollHelper.setupTouchScroll('week-grid-container');
   }
 
   scrollToBusinessHours() {

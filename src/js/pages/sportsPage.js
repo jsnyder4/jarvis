@@ -6,6 +6,7 @@ class SportsPage extends BasePage {
     this.selectedLeague = null;
     this.leagueData = {};
     this.refreshInterval = null;
+    this.touchScrollCleanups = [];
   }
 
   async render() {
@@ -138,44 +139,18 @@ class SportsPage extends BasePage {
       </div>
     `;
     
+    // Clean up old listeners first
+    this.touchScrollCleanups.forEach(cleanup => cleanup && cleanup());
+    this.touchScrollCleanups = [];
+    
     // Setup touch scrolling for both containers
-    this.setupTouchScroll('standings-scroll');
-    this.setupTouchScroll('scores-scroll');
+    this.touchScrollCleanups.push(this.setupTouchScroll('standings-scroll'));
+    this.touchScrollCleanups.push(this.setupTouchScroll('scores-scroll'));
   }
 
   setupTouchScroll(elementId) {
-    const element = document.getElementById(elementId);
-    if (!element) return;
-
-    let startY = 0;
-    let startScrollTop = 0;
-    let isDragging = false;
-
-    element.addEventListener('pointerdown', (e) => {
-      isDragging = true;
-      startY = e.clientY;
-      startScrollTop = element.scrollTop;
-      element.style.cursor = 'grabbing';
-      e.preventDefault();
-    });
-
-    element.addEventListener('pointermove', (e) => {
-      if (!isDragging) return;
-      
-      const deltaY = startY - e.clientY;
-      element.scrollTop = startScrollTop + deltaY;
-      e.preventDefault();
-    });
-
-    element.addEventListener('pointerup', () => {
-      isDragging = false;
-      element.style.cursor = 'grab';
-    });
-
-    element.addEventListener('pointerleave', () => {
-      isDragging = false;
-      element.style.cursor = 'grab';
-    });
+    // Use shared touch scroll helper
+    return TouchScrollHelper.setupTouchScroll(elementId);
   }
 
   renderScoreboard(scoreboard) {
@@ -423,6 +398,10 @@ class SportsPage extends BasePage {
   onHide() {
     // Stop auto-refresh when page is hidden
     this.stopAutoRefresh();
+    
+    // Clean up touch scroll listeners
+    this.touchScrollCleanups.forEach(cleanup => cleanup && cleanup());
+    this.touchScrollCleanups = [];
   }
 
   startAutoRefresh() {
