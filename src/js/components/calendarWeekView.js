@@ -75,7 +75,7 @@ class CalendarWeekView {
             -ms-overflow-style: none; /* IE/Edge */
           }
         </style>
-        <div class="flex-1 overflow-auto min-h-0" id="week-grid-container" style="-webkit-overflow-scrolling: touch; touch-action: pan-y;">
+        <div class="flex-1 overflow-auto min-h-0" id="week-grid-container" style="-webkit-overflow-scrolling: touch; touch-action: pan-y; cursor: grab;">
           <div class="grid grid-cols-8 gap-0 week-grid-content">
             <!-- Header row with day names -->
             <div class="sticky top-0 bg-gray-50 z-10 border-b-2 border-gray-300"></div>
@@ -111,7 +111,43 @@ class CalendarWeekView {
     setTimeout(() => {
       this.positionEvents(weekDays, hours);
       this.scrollToBusinessHours();
+      this.setupTouchScroll();
     }, 10);
+  }
+
+  setupTouchScroll() {
+    const element = document.getElementById('week-grid-container');
+    if (!element) return;
+
+    let startY = 0;
+    let startScrollTop = 0;
+    let isDragging = false;
+
+    element.addEventListener('pointerdown', (e) => {
+      isDragging = true;
+      startY = e.clientY;
+      startScrollTop = element.scrollTop;
+      element.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+
+    element.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      
+      const deltaY = startY - e.clientY;
+      element.scrollTop = startScrollTop + deltaY;
+      e.preventDefault();
+    });
+
+    element.addEventListener('pointerup', () => {
+      isDragging = false;
+      element.style.cursor = 'grab';
+    });
+
+    element.addEventListener('pointerleave', () => {
+      isDragging = false;
+      element.style.cursor = 'grab';
+    });
   }
 
   scrollToBusinessHours() {

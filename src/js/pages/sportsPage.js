@@ -74,18 +74,19 @@ class SportsPage extends BasePage {
     tabsContainer.innerHTML = leagues.map(leagueKey => {
       const data = this.leagueData[leagueKey];
       const isSelected = leagueKey === this.selectedLeague;
+      const leagueLogo = data?.league?.logo || '';
       const leagueName = data?.league?.name || leagueKey;
       
       return `
         <button 
-          class="league-tab px-5 py-2 rounded-lg font-semibold text-base transition-all ${
+          class="league-tab px-4 py-2 rounded-lg font-semibold text-base transition-all flex items-center gap-2 ${
             isSelected 
               ? 'bg-blue-600 text-white shadow-md' 
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }"
           data-league="${leagueKey}"
         >
-          ${leagueName}
+          ${leagueLogo ? `<img src="${leagueLogo}" alt="${leagueName}" class="w-8 h-8 object-contain">` : leagueName}
         </button>
       `;
     }).join('');
@@ -93,7 +94,7 @@ class SportsPage extends BasePage {
     // Add click handlers
     tabsContainer.querySelectorAll('.league-tab').forEach(tab => {
       tab.addEventListener('click', (e) => {
-        this.selectedLeague = e.target.dataset.league;
+        this.selectedLeague = e.target.closest('.league-tab').dataset.league;
         this.renderLeagueTabs();
         this.renderLeagueContent();
       });

@@ -14,25 +14,29 @@ class SportsService {
         code: 'usa.1',
         name: 'MLS',
         fullName: 'Major League Soccer',
-        sport: 'soccer'
+        sport: 'soccer',
+        logo: 'https://a.espncdn.com/i/leaguelogos/soccer/500/19.png'
       },
       premierLeague: {
         code: 'eng.1',
         name: 'Premier League',
         fullName: 'English Premier League',
-        sport: 'soccer'
+        sport: 'soccer',
+        logo: 'https://a.espncdn.com/i/leaguelogos/soccer/500/23.png'
       },
       laLiga: {
         code: 'esp.1',
         name: 'La Liga',
         fullName: 'Spanish La Liga',
-        sport: 'soccer'
+        sport: 'soccer',
+        logo: 'https://a.espncdn.com/i/leaguelogos/soccer/500/15.png'
       },
       nfl: {
         code: 'nfl',
         name: 'NFL',
         fullName: 'National Football League',
-        sport: 'football'
+        sport: 'football',
+        logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png'
       }
     };
   }

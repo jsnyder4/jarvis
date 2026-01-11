@@ -43,9 +43,6 @@
 <body class="overflow-hidden bg-gray-50">
   <!-- Page Container -->
   <div id="page-container" class="w-screen h-screen relative">
-    <!-- Page: Home -->
-    <div id="page-home" class="page absolute inset-0 hidden"></div>
-    
     <!-- Page: Weather -->
     <div id="page-weather" class="page absolute inset-0 hidden"></div>
     
@@ -65,11 +62,6 @@
   <!-- Bottom Navigation Bar -->
   <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
     <div class="flex justify-around items-center h-20">
-      <button class="nav-item flex-1 flex flex-col items-center justify-center h-full transition-colors hover:bg-gray-50" data-page="home" onclick="pageManager.navigateTo('home')">
-        <span class="text-3xl mb-1">🏠</span>
-        <span class="text-xs font-medium text-gray-600">Home</span>
-      </button>
-      
       <button class="nav-item flex-1 flex flex-col items-center justify-center h-full transition-colors hover:bg-gray-50" data-page="weather" onclick="pageManager.navigateTo('weather')">
         <span class="text-3xl mb-1">🌤️</span>
         <span class="text-xs font-medium text-gray-600">Weather</span>
@@ -152,7 +144,6 @@
   <script src="src/js/components/calendarWeekView.js"></script>
   
   <!-- Load pages -->
-  <script src="src/js/pages/homePage.js"></script>
   <script src="src/js/pages/weatherPage.js"></script>
   <script src="src/js/pages/calendarPage.js"></script>
   <script src="src/js/pages/photosPage.js"></script>
