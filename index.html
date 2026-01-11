@@ -58,6 +58,9 @@
     <!-- Page: Sports -->
     <div id="page-sports" class="page absolute inset-0 hidden"></div>
     
+    <!-- Page: Bible -->
+    <div id="page-bible" class="page absolute inset-0 hidden"></div>
+    
     <!-- Page: Lists -->
     <div id="page-lists" class="page absolute inset-0 hidden"></div>
   </div>
@@ -83,6 +86,11 @@
       <button class="nav-item flex-1 flex flex-col items-center justify-center h-full transition-colors hover:bg-gray-50" data-page="sports" onclick="pageManager.navigateTo('sports')">
         <span class="text-3xl mb-1">⚽</span>
         <span class="text-xs font-medium text-gray-600">Sports</span>
+      </button>
+      
+      <button class="nav-item flex-1 flex flex-col items-center justify-center h-full transition-colors hover:bg-gray-50" data-page="bible" onclick="pageManager.navigateTo('bible')">
+        <span class="text-3xl mb-1">📖</span>
+        <span class="text-xs font-medium text-gray-600">Bible</span>
       </button>
       
       <button class="nav-item flex-1 flex flex-col items-center justify-center h-full transition-colors hover:bg-gray-50" data-page="lists" onclick="pageManager.navigateTo('lists')">
@@ -153,6 +161,7 @@
   <script src="src/js/pages/calendarPage.js"></script>
   <script src="src/js/pages/photosPage.js"></script>
   <script src="src/js/pages/sportsPage.js"></script>
+  <script src="src/js/pages/biblePage.js"></script>
   <script src="src/js/pages/listsPage.js"></script>
   
   <!-- Initialize app -->
