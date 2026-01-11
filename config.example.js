@@ -11,11 +11,11 @@ const CONFIG = {
   location: {
     // Your coordinates for weather data
     // Find yours at: https://www.latlong.net/
-    latitude: 39.264874137394095,
-    longitude: -84.33681636832196,
+    latitude: 40.7128,  // Example: New York City
+    longitude: -74.0060,
     
     // Display name for your location (future use)
-    name: 'Cincinnati, OH',
+    name: 'Your City',
     
     // Timezone (auto-detected by Open-Meteo, but can override)
     // timezone: 'America/New_York'
