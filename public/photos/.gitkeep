@@ -1,0 +1,2 @@
+# This file ensures the photos directory is tracked by git
+# Actual photo files should be added but are likely gitignored

@@ -79,11 +79,11 @@ class CalendarWeekView {
         <div class="flex-1 overflow-auto min-h-0" id="week-grid-container" style="-webkit-overflow-scrolling: touch; touch-action: pan-y; cursor: grab;">
           <div class="grid grid-cols-8 gap-0 week-grid-content">
             <!-- Header row with day names -->
-            <div class="sticky top-0 bg-gray-50 z-10 border-b-2 border-gray-300"></div>
+            <div class="sticky top-0 bg-gray-50 z-20 border-b-2 border-gray-300"></div>
             ${weekDays.map(date => {
               const isToday = this.isToday(date);
               return `
-                <div class="sticky top-0 bg-gray-50 z-10 text-center p-2 border-b-2 border-gray-300">
+                <div class="sticky top-0 bg-gray-50 z-20 text-center p-2 border-b-2 border-gray-300">
                   <div class="font-semibold ${isToday ? 'text-blue-600' : 'text-gray-700'}">${date.toLocaleDateString('en-US', { weekday: 'short' })}</div>
                   <div class="text-2xl ${isToday ? 'text-blue-600 font-bold' : 'text-gray-800'}">${date.getDate()}</div>
                 </div>

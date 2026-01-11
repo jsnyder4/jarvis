@@ -1,56 +1,53 @@
-// Photos Page - Photo gallery with slideshow
+// Photos Page - Album-based photo slideshow with auto-discovery
 
 class PhotosPage extends BasePage {
   constructor() {
     super('photos', 'page-photos');
-    this.photoService = null;
+    this.manifest = null;
+    this.albums = [];
+    this.currentAlbum = null;
     this.photos = [];
     this.currentIndex = 0;
     this.slideshowInterval = null;
     this.isPlaying = false;
-    this.isFullscreen = false;
   }
 
-  render() {
+  async render() {
     if (!this.container) return;
 
-    const config = window.CONFIG?.photos || {};
-    const interval = config.slideshowInterval || 5;
-
     this.container.innerHTML = `
-      <div class="h-full flex flex-col pb-20 px-8 pt-6 bg-white">
+      <div class="h-full flex flex-col pb-20 bg-white">
         <!-- Header -->
-        <div class="flex items-center justify-between mb-4 flex-shrink-0">
+        <div class="flex items-center justify-between px-8 pt-6 pb-4 flex-shrink-0">
           <h1 class="text-2xl font-bold text-gray-800">Photos</h1>
           <div class="flex gap-2">
-            <button id="fullscreen-btn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold shadow-lg">
-              ⛶ Fullscreen
-            </button>
+            <select id="album-selector" class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-800 font-semibold hover:bg-gray-200 transition">
+              <option value="">Loading albums...</option>
+            </select>
             <button id="play-pause-btn" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold shadow-lg">
-              ▶ Play Slideshow
+              ▶ Play
             </button>
           </div>
         </div>
 
         <!-- Photo display area -->
-        <div class="flex-1 flex items-center justify-center bg-gray-900 rounded-xl overflow-hidden relative min-h-0">
+        <div class="flex-1 flex items-center justify-center bg-gray-900 rounded-xl overflow-hidden relative min-h-0 mx-8 mb-6">
           <div id="photo-container" class="w-full h-full flex items-center justify-center relative">
-            <!-- Photos will be inserted here -->
-            <div class="text-white text-2xl">Loading photos...</div>
+            <div class="text-white text-2xl">Loading albums...</div>
           </div>
 
           <!-- Navigation arrows -->
-          <button id="prev-photo" class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-4 rounded-full transition hidden">
+          <button id="prev-photo" class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-4 rounded-full transition text-3xl hidden">
             ‹
           </button>
-          <button id="next-photo" class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-4 rounded-full transition hidden">
+          <button id="next-photo" class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-4 rounded-full transition text-3xl hidden">
             ›
           </button>
 
           <!-- Photo info overlay -->
           <div id="photo-info" class="absolute bottom-4 left-4 bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg hidden">
-            <div class="text-sm" id="photo-count"></div>
-            <div class="text-xs opacity-75" id="album-name"></div>
+            <div class="text-sm font-semibold" id="album-name"></div>
+            <div class="text-xs" id="photo-count"></div>
           </div>
         </div>
       </div>
@@ -58,49 +55,110 @@ class PhotosPage extends BasePage {
   }
 
   async onShow() {
-    // Initialize photo service
-    if (!this.photoService) {
-      this.photoService = photoService.getInstance();
-    }
-
-    // Setup button handlers
+    await this.loadManifest();
     this.setupEventHandlers();
-
-    // Fetch photos
-    try {
-      this.photos = await this.photoService.fetchAllPhotos();
-      
-      if (this.photos.length === 0) {
-        this.showNoPhotos();
-      } else {
-        this.currentIndex = 0;
-        this.displayPhoto(this.currentIndex);
-        this.showNavigationButtons();
-      }
-    } catch (error) {
-      console.error('Error loading photos:', error);
-      this.showError(error);
+    
+    if (this.albums.length > 0) {
+      this.loadAlbum(this.albums[0].name);
+    } else {
+      this.showNoAlbums();
     }
-
-    // Setup global reference
-    window.photosPage = this;
   }
 
   onHide() {
     this.stopSlideshow();
-    if (this.isFullscreen) {
-      this.exitFullscreen();
+  }
+
+  async loadManifest() {
+    try {
+      const response = await fetch('public/photos/manifest.json');
+      if (!response.ok) {
+        throw new Error('Manifest file not found. Run: node generate-photo-manifest.js');
+      }
+      
+      this.manifest = await response.json();
+      this.albums = this.manifest.albums || [];
+      
+      console.log(`Loaded ${this.albums.length} album(s) from manifest`);
+      
+      // Populate album selector
+      this.renderAlbumSelector();
+      
+    } catch (error) {
+      console.error('Error loading photo manifest:', error);
+      this.showManifestError(error);
+    }
+  }
+
+  renderAlbumSelector() {
+    const selector = document.getElementById('album-selector');
+    if (!selector) return;
+
+    if (this.albums.length === 0) {
+      selector.innerHTML = '<option value="">No albums found</option>';
+      selector.disabled = true;
+      return;
+    }
+
+    selector.innerHTML = this.albums.map(album => `
+      <option value="${album.name}">${album.displayName} (${album.count})</option>
+    `).join('');
+    
+    selector.disabled = false;
+  }
+
+  loadAlbum(albumName) {
+    const album = this.albums.find(a => a.name === albumName);
+    if (!album) {
+      console.error('Album not found:', albumName);
+      return;
+    }
+
+    this.currentAlbum = album;
+    this.currentIndex = 0;
+    
+    // Build photo list
+    const basePath = album.path ? `public/photos/${album.path}` : 'public/photos';
+    this.photos = album.files.map((filename, index) => ({
+      id: index,
+      filename: filename,
+      url: `${basePath}/${filename}`
+    }));
+
+    // Optionally shuffle
+    const config = window.CONFIG?.photos || {};
+    if (config.photoOrder === 'random') {
+      this.shuffleArray(this.photos);
+    }
+
+    console.log(`Loaded album "${album.displayName}" with ${this.photos.length} files`);
+    
+    // Update album selector
+    const selector = document.getElementById('album-selector');
+    if (selector) {
+      selector.value = albumName;
+    }
+
+    // Display first photo
+    if (this.photos.length > 0) {
+      this.displayPhoto(0);
+      this.showNavigationButtons();
+    } else {
+      this.showNoPhotos();
     }
   }
 
   setupEventHandlers() {
-    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const albumSelector = document.getElementById('album-selector');
     const playPauseBtn = document.getElementById('play-pause-btn');
     const prevBtn = document.getElementById('prev-photo');
     const nextBtn = document.getElementById('next-photo');
 
-    if (fullscreenBtn) {
-      fullscreenBtn.onclick = () => this.toggleFullscreen();
+    if (albumSelector) {
+      albumSelector.onchange = (e) => {
+        this.stopSlideshow();
+        this.loadAlbum(e.target.value);
+      };
     }
 
     if (playPauseBtn) {
@@ -117,17 +175,15 @@ class PhotosPage extends BasePage {
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-      if (!this.isVisible) return;
-      
-      if (e.key === 'ArrowLeft') {
-        this.previousPhoto();
-      } else if (e.key === 'ArrowRight') {
-        this.nextPhoto();
-      } else if (e.key === ' ') {
-        e.preventDefault();
-        this.toggleSlideshow();
-      } else if (e.key === 'f' || e.key === 'F') {
-        this.toggleFullscreen();
+      if (this.container && !this.container.classList.contains('hidden')) {
+        if (e.key === 'ArrowLeft') {
+          this.previousPhoto();
+        } else if (e.key === 'ArrowRight') {
+          this.nextPhoto();
+        } else if (e.key === ' ') {
+          e.preventDefault();
+          this.toggleSlideshow();
+        }
       }
     });
   }
@@ -139,28 +195,127 @@ class PhotosPage extends BasePage {
     const container = document.getElementById('photo-container');
     const photoInfo = document.getElementById('photo-info');
     const photoCount = document.getElementById('photo-count');
-    const albumName = document.getElementById('album-name');
+    const albumNameEl = document.getElementById('album-name');
 
     if (container) {
       const config = window.CONFIG?.photos || {};
       const transitionDuration = config.transitionDuration || 1000;
 
-      // Create new image
+      // Detect file type
+      const isVideo = this.isVideoFile(photo.filename);
+      const isHEIC = photo.filename.toLowerCase().endsWith('.heic');
+
+      // Show loading message
+      container.innerHTML = '<div class="text-white text-xl">Loading...</div>';
+
+      if (isHEIC) {
+        // Convert HEIC to displayable format using heic2any
+        this.displayHEIC(photo, container, transitionDuration);
+        
+      } else if (isVideo) {
+        // Create video element
+        const video = document.createElement('video');
+        video.className = 'max-w-full max-h-full object-contain';
+        video.style.opacity = '0';
+        video.style.transition = `opacity ${transitionDuration}ms ease-in-out`;
+        video.controls = true;
+        video.autoplay = true;
+        video.loop = false; // Don't loop videos
+        video.muted = true; // Mute by default for autoplay
+
+        video.onloadedmetadata = () => {
+          container.innerHTML = '';
+          container.appendChild(video);
+          
+          // Fade in
+          requestAnimationFrame(() => {
+            video.style.opacity = '1';
+          });
+        };
+
+        video.onerror = () => {
+          console.error('Failed to load video:', photo.url);
+          container.innerHTML = '<div class="text-white text-xl">Failed to load video</div>';
+        };
+
+        // Auto-advance to next when video ends (during slideshow)
+        video.onended = () => {
+          if (this.isPlaying) {
+            this.nextPhoto();
+          }
+        };
+
+        video.src = photo.url;
+        
+      } else {
+        // Create image element
+        const img = document.createElement('img');
+        img.className = 'max-w-full max-h-full object-contain';
+        img.style.opacity = '0';
+        img.style.transition = `opacity ${transitionDuration}ms ease-in-out`;
+
+        img.onload = () => {
+          container.innerHTML = '';
+          container.appendChild(img);
+          
+          // Fade in
+          requestAnimationFrame(() => {
+            img.style.opacity = '1';
+          });
+        };
+
+        img.onerror = () => {
+          console.error('Failed to load photo:', photo.url);
+          container.innerHTML = '<div class="text-white text-xl">Failed to load photo</div>';
+        };
+
+        img.src = photo.url;
+      }
+    }
+
+    // Update info
+    if (albumNameEl && this.currentAlbum) {
+      albumNameEl.textContent = this.currentAlbum.displayName;
+    }
+    if (photoCount) {
+      photoCount.textContent = `${index + 1} of ${this.photos.length}`;
+    }
+    if (photoInfo) {
+      photoInfo.classList.remove('hidden');
+    }
+  }
+
+  async displayHEIC(photo, container, transitionDuration) {
+    try {
+      // Show loading with more detail
+      container.innerHTML = '<div class="text-white text-xl">Converting HEIC...</div>';
+      
+      // Fetch the HEIC file as a blob
+      const response = await fetch(photo.url);
+      const blob = await response.blob();
+      
+      // Convert HEIC to JPEG using heic2any
+      // For Live Photos, this extracts the still image frame
+      const convertedBlob = await heic2any({
+        blob: blob,
+        toType: 'image/jpeg',
+        quality: 0.9,
+        multiple: false  // Force single image output (not animation)
+      });
+      
+      // Handle array result (heic2any sometimes returns array)
+      const imageBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+      
+      // Create object URL from converted blob
+      const url = URL.createObjectURL(imageBlob);
+      
+      // Display the converted image
       const img = document.createElement('img');
       img.className = 'max-w-full max-h-full object-contain';
       img.style.opacity = '0';
       img.style.transition = `opacity ${transitionDuration}ms ease-in-out`;
-
-      // Show loading message
-      const loadingDiv = document.createElement('div');
-      loadingDiv.className = 'text-white text-xl';
-      loadingDiv.textContent = 'Loading photo...';
-      container.innerHTML = '';
-      container.appendChild(loadingDiv);
-
-      // Load high-res image
+      
       img.onload = () => {
-        // Clear container and show image
         container.innerHTML = '';
         container.appendChild(img);
         
@@ -168,27 +323,80 @@ class PhotosPage extends BasePage {
         requestAnimationFrame(() => {
           img.style.opacity = '1';
         });
+        
+        // Clean up object URL after image loads
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
       };
-
+      
       img.onerror = () => {
-        console.error('Failed to load photo:', photo.url);
-        container.innerHTML = '<div class="text-white text-xl">Failed to load photo</div>';
+        console.error('Failed to display converted HEIC:', photo.url);
+        this.showHEICError(photo, container, 'Failed to display converted image');
       };
+      
+      img.src = url;
+      
+    } catch (error) {
+      console.error('Failed to convert HEIC:', photo.url, error);
+      
+      // Try fallback: some browsers (Safari) can display HEIC natively
+      if (this.isSafariBrowser()) {
+        console.log('Attempting native HEIC display (Safari)...');
+        const img = document.createElement('img');
+        img.className = 'max-w-full max-h-full object-contain';
+        img.style.opacity = '0';
+        img.style.transition = `opacity ${transitionDuration}ms ease-in-out`;
+        
+        img.onload = () => {
+          container.innerHTML = '';
+          container.appendChild(img);
+          requestAnimationFrame(() => {
+            img.style.opacity = '1';
+          });
+        };
+        
+        img.onerror = () => {
+          this.showHEICError(photo, container, error.message);
+        };
+        
+        img.src = photo.url;
+      } else {
+        this.showHEICError(photo, container, error.message);
+      }
+    }
+  }
 
-      // Start loading
-      img.src = photo.url;
-    }
+  isSafariBrowser() {
+    return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  }
 
-    // Update info
-    if (photoCount) {
-      photoCount.textContent = `${index + 1} of ${this.photos.length}`;
-    }
-    if (albumName) {
-      albumName.textContent = photo.albumName;
-    }
-    if (photoInfo) {
-      photoInfo.classList.remove('hidden');
-    }
+  showHEICError(photo, container, errorMessage) {
+    container.innerHTML = `
+      <div class="text-center text-white">
+        <div class="text-6xl mb-4">⚠️</div>
+        <h2 class="text-2xl font-bold mb-2">HEIC Conversion Failed</h2>
+        <p class="text-gray-400">${photo.filename}</p>
+        <p class="text-gray-400 text-sm mt-2">${errorMessage}</p>
+        <p class="text-gray-500 text-xs mt-4">Tip: Convert to JPG for best compatibility</p>
+        <button 
+          onclick="photosPage.nextPhoto()" 
+          class="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Skip to Next →
+        </button>
+      </div>
+    `;
+    
+    // Make photosPage globally accessible for the button
+    window.photosPage = this;
+    
+    // Auto-skip after 3 seconds
+    setTimeout(() => this.nextPhoto(), 3000);
+  }
+
+  isVideoFile(filename) {
+    const videoExtensions = ['.mp4', '.mov', '.avi', '.webm', '.mkv', '.m4v'];
+    const ext = filename.toLowerCase().substring(filename.lastIndexOf('.'));
+    return videoExtensions.includes(ext);
   }
 
   previousPhoto() {
@@ -240,53 +448,11 @@ class PhotosPage extends BasePage {
 
     const playPauseBtn = document.getElementById('play-pause-btn');
     if (playPauseBtn) {
-      playPauseBtn.innerHTML = '▶ Play Slideshow';
+      playPauseBtn.innerHTML = '▶ Play';
       playPauseBtn.className = 'px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold shadow-lg';
     }
 
     console.log('Slideshow stopped');
-  }
-
-  toggleFullscreen() {
-    if (!document.fullscreenElement) {
-      this.enterFullscreen();
-    } else {
-      this.exitFullscreen();
-    }
-  }
-
-  enterFullscreen() {
-    const elem = document.documentElement;
-    
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen();
-    } else if (elem.webkitRequestFullscreen) {
-      elem.webkitRequestFullscreen();
-    } else if (elem.msRequestFullscreen) {
-      elem.msRequestFullscreen();
-    }
-
-    this.isFullscreen = true;
-    const btn = document.getElementById('fullscreen-btn');
-    if (btn) {
-      btn.innerHTML = '⛶ Exit Fullscreen';
-    }
-  }
-
-  exitFullscreen() {
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    } else if (document.webkitExitFullscreen) {
-      document.webkitExitFullscreen();
-    } else if (document.msExitFullscreen) {
-      document.msExitFullscreen();
-    }
-
-    this.isFullscreen = false;
-    const btn = document.getElementById('fullscreen-btn');
-    if (btn) {
-      btn.innerHTML = '⛶ Fullscreen';
-    }
   }
 
   showNavigationButtons() {
@@ -297,29 +463,53 @@ class PhotosPage extends BasePage {
     if (nextBtn) nextBtn.classList.remove('hidden');
   }
 
+  showNoAlbums() {
+    const container = document.getElementById('photo-container');
+    if (container) {
+      container.innerHTML = `
+        <div class="text-center text-white">
+          <div class="text-6xl mb-4">📁</div>
+          <h2 class="text-2xl font-bold mb-2">No Albums Found</h2>
+          <p class="text-gray-400">Create folders in public/photos/</p>
+          <p class="text-gray-400 text-sm mt-2">Then run: node generate-photo-manifest.js</p>
+        </div>
+      `;
+    }
+  }
+
   showNoPhotos() {
     const container = document.getElementById('photo-container');
     if (container) {
       container.innerHTML = `
         <div class="text-center text-white">
           <div class="text-6xl mb-4">📷</div>
-          <h2 class="text-2xl font-bold mb-2">No Photos Found</h2>
-          <p class="text-gray-400">Check your Google Photos album links in config.js</p>
+          <h2 class="text-2xl font-bold mb-2">No Photos in Album</h2>
+          <p class="text-gray-400">Add photos to this album folder</p>
+          <p class="text-gray-400 text-sm mt-2">Then run: node generate-photo-manifest.js</p>
         </div>
       `;
     }
   }
 
-  showError(error) {
+  showManifestError(error) {
     const container = document.getElementById('photo-container');
     if (container) {
       container.innerHTML = `
         <div class="text-center text-white">
           <div class="text-6xl mb-4">⚠️</div>
-          <h2 class="text-2xl font-bold mb-2 text-red-500">Error Loading Photos</h2>
-          <p class="text-gray-400">${error.message}</p>
+          <h2 class="text-2xl font-bold mb-2">Manifest Not Found</h2>
+          <p class="text-gray-400 mb-4">Run the manifest generator:</p>
+          <code class="bg-gray-800 px-4 py-2 rounded text-sm">node generate-photo-manifest.js</code>
+          <p class="text-gray-500 text-xs mt-4">${error.message}</p>
         </div>
       `;
+    }
+  }
+
+  shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
     }
   }
 }

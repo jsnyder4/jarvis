@@ -6,6 +6,8 @@
   "scripts": {
     "start": "electron . 2>/dev/null",
     "dev": "NODE_ENV=development electron . 2>/dev/null",
+    "photos": "node generate-photo-manifest.js",
+    "photos:convert": "node generate-photo-manifest.js --convert-heic",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
