@@ -10,13 +10,15 @@ class PhotosPage extends BasePage {
     this.currentIndex = 0;
     this.slideshowInterval = null;
     this.isPlaying = false;
+    this.isFullscreen = false;
+    this.lastUsedAlbum = null;
   }
 
   async render() {
     if (!this.container) return;
 
     this.container.innerHTML = `
-      <div class="h-full flex flex-col pb-20 bg-white">
+      <div class="h-full flex flex-col pb-20 bg-white" id="photos-normal-view">
         <!-- Header -->
         <div class="flex items-center justify-between px-8 pt-6 pb-4 flex-shrink-0">
           <h1 class="text-2xl font-bold text-gray-800">Photos</h1>
@@ -24,6 +26,9 @@ class PhotosPage extends BasePage {
             <select id="album-selector" class="px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-800 font-semibold hover:bg-gray-200 transition">
               <option value="">Loading albums...</option>
             </select>
+            <button id="fullscreen-btn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold shadow-lg">
+              ⛶ Fullscreen
+            </button>
             <button id="play-pause-btn" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold shadow-lg">
               ▶ Play
             </button>
@@ -37,10 +42,10 @@ class PhotosPage extends BasePage {
           </div>
 
           <!-- Navigation arrows -->
-          <button id="prev-photo" class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-4 rounded-full transition text-3xl hidden">
+          <button id="prev-photo" class="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-4 rounded-full transition text-3xl hidden z-10">
             ‹
           </button>
-          <button id="next-photo" class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-4 rounded-full transition text-3xl hidden">
+          <button id="next-photo" class="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-4 rounded-full transition text-3xl hidden z-10">
             ›
           </button>
 
@@ -50,6 +55,26 @@ class PhotosPage extends BasePage {
             <div class="text-xs" id="photo-count"></div>
           </div>
         </div>
+      </div>
+
+      <!-- Fullscreen Mode -->
+      <div id="photos-fullscreen-view" class="hidden fixed inset-0 bg-black z-50">
+        <div id="fullscreen-photo-container" class="w-full h-full flex items-center justify-center relative">
+          <!-- Photo will be inserted here -->
+        </div>
+
+        <!-- Exit button (shown on interaction) -->
+        <button id="exit-fullscreen-btn" class="hidden absolute top-8 right-8 bg-red-600 bg-opacity-80 hover:bg-opacity-100 text-white px-8 py-4 rounded-full transition text-2xl font-bold shadow-2xl z-20">
+          ✕ Exit
+        </button>
+
+        <!-- Navigation arrows for fullscreen -->
+        <button id="fullscreen-prev-photo" class="hidden absolute left-8 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-6 rounded-full transition text-4xl z-10">
+          ‹
+        </button>
+        <button id="fullscreen-next-photo" class="hidden absolute right-8 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-6 rounded-full transition text-4xl z-10">
+          ›
+        </button>
       </div>
     `;
   }
@@ -67,6 +92,10 @@ class PhotosPage extends BasePage {
 
   onHide() {
     this.stopSlideshow();
+    // Exit fullscreen if active
+    if (this.isFullscreen) {
+      this.exitFullscreen();
+    }
   }
 
   async loadManifest() {
@@ -115,6 +144,7 @@ class PhotosPage extends BasePage {
     }
 
     this.currentAlbum = album;
+    this.lastUsedAlbum = albumName; // Track last used album for screensaver
     this.currentIndex = 0;
     
     // Build photo list
@@ -151,8 +181,13 @@ class PhotosPage extends BasePage {
   setupEventHandlers() {
     const albumSelector = document.getElementById('album-selector');
     const playPauseBtn = document.getElementById('play-pause-btn');
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
     const prevBtn = document.getElementById('prev-photo');
     const nextBtn = document.getElementById('next-photo');
+    const exitFullscreenBtn = document.getElementById('exit-fullscreen-btn');
+    const fullscreenPrevBtn = document.getElementById('fullscreen-prev-photo');
+    const fullscreenNextBtn = document.getElementById('fullscreen-next-photo');
+    const fullscreenView = document.getElementById('photos-fullscreen-view');
 
     if (albumSelector) {
       albumSelector.onchange = (e) => {
@@ -165,12 +200,37 @@ class PhotosPage extends BasePage {
       playPauseBtn.onclick = () => this.toggleSlideshow();
     }
 
+    if (fullscreenBtn) {
+      fullscreenBtn.onclick = () => this.enterFullscreen();
+    }
+
+    if (exitFullscreenBtn) {
+      exitFullscreenBtn.onclick = () => this.exitFullscreen();
+    }
+
     if (prevBtn) {
       prevBtn.onclick = () => this.previousPhoto();
     }
 
     if (nextBtn) {
       nextBtn.onclick = () => this.nextPhoto();
+    }
+
+    if (fullscreenPrevBtn) {
+      fullscreenPrevBtn.onclick = () => this.previousPhoto();
+    }
+
+    if (fullscreenNextBtn) {
+      fullscreenNextBtn.onclick = () => this.nextPhoto();
+    }
+
+    // Fullscreen interaction - show controls on touch/click
+    if (fullscreenView) {
+      fullscreenView.onclick = (e) => {
+        // Don't trigger if clicking on buttons
+        if (e.target.tagName === 'BUTTON') return;
+        this.showFullscreenControls();
+      };
     }
 
     // Keyboard shortcuts
@@ -192,7 +252,11 @@ class PhotosPage extends BasePage {
     if (!this.photos || this.photos.length === 0) return;
 
     const photo = this.photos[index];
-    const container = document.getElementById('photo-container');
+    
+    // Choose container based on fullscreen mode
+    const containerId = this.isFullscreen ? 'fullscreen-photo-container' : 'photo-container';
+    const container = document.getElementById(containerId);
+    
     const photoInfo = document.getElementById('photo-info');
     const photoCount = document.getElementById('photo-count');
     const albumNameEl = document.getElementById('album-name');
@@ -453,6 +517,103 @@ class PhotosPage extends BasePage {
     }
 
     console.log('Slideshow stopped');
+  }
+
+  enterFullscreen(autoplay = false) {
+    this.isFullscreen = true;
+    
+    const normalView = document.getElementById('photos-normal-view');
+    const fullscreenView = document.getElementById('photos-fullscreen-view');
+    const bottomNav = document.getElementById('bottom-nav');
+    
+    if (normalView) normalView.classList.add('hidden');
+    if (fullscreenView) fullscreenView.classList.remove('hidden');
+    if (bottomNav) bottomNav.classList.add('hidden');
+    
+    // Display current photo in fullscreen
+    this.displayPhoto(this.currentIndex);
+    
+    // Start slideshow if autoplay requested
+    if (autoplay && !this.isPlaying) {
+      this.startSlideshow();
+    }
+  }
+
+  exitFullscreen() {
+    this.isFullscreen = false;
+    
+    const normalView = document.getElementById('photos-normal-view');
+    const fullscreenView = document.getElementById('photos-fullscreen-view');
+    const bottomNav = document.getElementById('bottom-nav');
+    const exitBtn = document.getElementById('exit-fullscreen-btn');
+    const prevBtn = document.getElementById('fullscreen-prev-photo');
+    const nextBtn = document.getElementById('fullscreen-next-photo');
+    
+    if (normalView) normalView.classList.remove('hidden');
+    if (fullscreenView) fullscreenView.classList.add('hidden');
+    if (bottomNav) bottomNav.classList.remove('hidden');
+    if (exitBtn) exitBtn.classList.add('hidden');
+    if (prevBtn) prevBtn.classList.add('hidden');
+    if (nextBtn) nextBtn.classList.add('hidden');
+    
+    // Redisplay current photo in normal view
+    this.displayPhoto(this.currentIndex);
+    
+    // Reset inactivity timer when exiting fullscreen
+    if (window.screensaverManager) {
+      window.screensaverManager.resetInactivityTimer();
+    }
+  }
+
+  showFullscreenControls() {
+    if (!this.isFullscreen) return;
+    
+    const exitBtn = document.getElementById('exit-fullscreen-btn');
+    const prevBtn = document.getElementById('fullscreen-prev-photo');
+    const nextBtn = document.getElementById('fullscreen-next-photo');
+    
+    if (exitBtn) exitBtn.classList.remove('hidden');
+    if (prevBtn) prevBtn.classList.remove('hidden');
+    if (nextBtn) nextBtn.classList.remove('hidden');
+    
+    // Auto-hide controls after 3 seconds
+    setTimeout(() => {
+      if (this.isFullscreen) {
+        if (exitBtn) exitBtn.classList.add('hidden');
+        if (prevBtn) prevBtn.classList.add('hidden');
+        if (nextBtn) nextBtn.classList.add('hidden');
+      }
+    }, 3000);
+  }
+
+  async startScreensaver() {
+    // Ensure manifest is loaded
+    if (!this.manifest || this.albums.length === 0) {
+      await this.loadManifest();
+    }
+    
+    // Load last used album or first album
+    const albumToLoad = this.lastUsedAlbum || (this.albums.length > 0 ? this.albums[0].name : null);
+    
+    if (!albumToLoad) return;
+    
+    // Navigate to photos page if not already there
+    if (pageManager.getCurrentPageId() !== 'photos') {
+      await pageManager.navigateTo('photos');
+      // Wait a bit for page to be ready
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    // Load album if needed
+    if (!this.currentAlbum || this.currentAlbum.name !== albumToLoad) {
+      this.loadAlbum(albumToLoad);
+    }
+    
+    // Wait for photos to load
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Enter fullscreen with autoplay
+    this.enterFullscreen(true);
   }
 
   showNavigationButtons() {

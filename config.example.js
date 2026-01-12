@@ -161,7 +161,15 @@ const CONFIG = {
     transitionDuration: 1000,
     
     // Photo order: 'random' or 'sequential'
-    photoOrder: 'sequential'
+    photoOrder: 'sequential',
+    
+    // Screensaver inactivity timeout in minutes
+    // After this many minutes of no interaction, the app will:
+    //   - Navigate to photos page
+    //   - Enter fullscreen mode
+    //   - Start slideshow automatically
+    // Set to 0 to disable screensaver
+    screensaverInactivityMinutes: 5
   },
 
   // ====================

@@ -20,6 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
   pageManager.registerPage('bible', biblePage);
   pageManager.registerPage('lists', listsPage);
   
+  // Initialize screensaver manager
+  if (window.screensaverManager) {
+    screensaverManager.init(photosPage);
+  }
+  
   // Navigate to weather page by default
   pageManager.navigateTo('weather');
   
