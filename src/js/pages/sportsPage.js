@@ -7,6 +7,7 @@ class SportsPage extends BasePage {
     this.leagueData = {};
     this.refreshInterval = null;
     this.touchScrollCleanups = [];
+    this.modalTouchScrollCleanup = null;
   }
 
   async render() {
@@ -39,7 +40,7 @@ class SportsPage extends BasePage {
         
         <!-- Game Detail Modal (hidden by default) -->
         <div id="game-detail-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div class="bg-white rounded-2xl p-8 max-w-3xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div id="game-detail-modal-content" class="bg-white rounded-2xl p-8 max-w-3xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto" style="-webkit-overflow-scrolling: touch; touch-action: pan-y; cursor: grab;">
             <div id="game-detail-content"></div>
             <button onclick="window.hideGameDetail()" class="mt-6 px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
               Close
@@ -416,6 +417,12 @@ class SportsPage extends BasePage {
     this.touchScrollCleanups.forEach(cleanup => cleanup && cleanup());
     this.touchScrollCleanups = [];
     
+    // Clean up modal touch scroll
+    if (this.modalTouchScrollCleanup) {
+      this.modalTouchScrollCleanup();
+      this.modalTouchScrollCleanup = null;
+    }
+    
     // Clean up global functions
     window.showGameDetail = null;
     window.hideGameDetail = null;
@@ -470,6 +477,12 @@ class SportsPage extends BasePage {
     // Fetch detailed game information
     sportsService.getGameDetails(leagueKey, gameId).then(details => {
       this.renderGameDetailContent(game, details);
+      
+      // Setup touch scrolling for modal content
+      if (this.modalTouchScrollCleanup) {
+        this.modalTouchScrollCleanup();
+      }
+      this.modalTouchScrollCleanup = this.setupTouchScroll('game-detail-modal-content');
     }).catch(error => {
       console.error('[SportsPage] Error loading game details:', error);
       content.innerHTML = `
@@ -650,6 +663,12 @@ class SportsPage extends BasePage {
     const modal = document.getElementById('game-detail-modal');
     if (modal) {
       modal.classList.add('hidden');
+    }
+    
+    // Clean up modal touch scroll
+    if (this.modalTouchScrollCleanup) {
+      this.modalTouchScrollCleanup();
+      this.modalTouchScrollCleanup = null;
     }
   }
 }
