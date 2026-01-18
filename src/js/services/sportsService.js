@@ -120,6 +120,73 @@ class SportsService {
   }
 
   /**
+   * Get detailed game information including statistics
+   * @param {string} leagueKey - League key
+   * @param {string} gameId - Game ID
+   * @returns {Promise<Object>} Detailed game data
+   */
+  async getGameDetails(leagueKey, gameId) {
+    const league = this.leagues[leagueKey];
+    if (!league) {
+      throw new Error(`Unknown league: ${leagueKey}`);
+    }
+
+    const cacheKey = `game-${gameId}`;
+    const cached = this.getCached(cacheKey);
+    if (cached) return cached;
+
+    try {
+      const url = `${this.scoreboardBaseUrl}/${league.sport}/${league.code}/summary?event=${gameId}`;
+      console.log(`[SportsService] Fetching game details for ${gameId}:`, url);
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`ESPN API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const processed = this.processGameDetails(data, league);
+      
+      // Cache for 5 minutes for live/recent games, 60 minutes for completed
+      const cacheMinutes = processed.isCompleted ? 60 : 5;
+      this.setCached(cacheKey, processed, cacheMinutes);
+
+      return processed;
+    } catch (error) {
+      console.error(`[SportsService] Error fetching game ${gameId} details:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Process detailed game data
+   */
+  processGameDetails(data, league) {
+    const header = data.header || {};
+    const boxScore = data.boxscore || {};
+    const gameInfo = data.gameInfo || {};
+    
+    // Extract team statistics
+    const teams = boxScore.teams || [];
+    const awayTeamStats = teams.find(t => t.homeAway === 'away')?.statistics || [];
+    const homeTeamStats = teams.find(t => t.homeAway === 'home')?.statistics || [];
+
+    return {
+      id: header.id,
+      league: league.name,
+      isLive: header.competitions?.[0]?.status?.type?.state === 'in',
+      isCompleted: header.competitions?.[0]?.status?.type?.completed || false,
+      statistics: {
+        away: awayTeamStats,
+        home: homeTeamStats
+      },
+      attendance: gameInfo.attendance,
+      officials: gameInfo.officials || [],
+      lastUpdated: new Date()
+    };
+  }
+
+  /**
    * Get all data for multiple leagues
    * @param {Array<string>} leagueKeys - Array of league keys to fetch
    * @returns {Promise<Object>} Object with scoreboards and standings for each league
@@ -185,7 +252,8 @@ class SportsService {
           logo: homeTeam?.team?.logo,
           score: homeTeam?.score,
           record: homeTeam?.records?.[0]?.summary,
-          winner: homeTeam?.winner
+          winner: homeTeam?.winner,
+          statistics: homeTeam?.statistics || []
         },
         awayTeam: {
           id: awayTeam?.id,
@@ -195,7 +263,8 @@ class SportsService {
           logo: awayTeam?.team?.logo,
           score: awayTeam?.score,
           record: awayTeam?.records?.[0]?.summary,
-          winner: awayTeam?.winner
+          winner: awayTeam?.winner,
+          statistics: awayTeam?.statistics || []
         },
         
         // Additional info

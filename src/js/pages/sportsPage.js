@@ -15,17 +15,15 @@ class SportsPage extends BasePage {
     // Initial loading state
     this.container.innerHTML = `
       <div class="h-full overflow-hidden pb-24 sports-page">
-        <!-- Header -->
-        <div class="px-8 pt-8 pb-4">
-          <h1 class="text-2xl font-bold text-gray-800">Sports</h1>
-        </div>
-
-        <!-- League Selector -->
-        <div class="bg-white border-b border-gray-200">
-          <div class="flex space-x-2 p-3 px-8" id="league-tabs">
-            <div class="animate-pulse bg-gray-200 h-10 w-32 rounded-lg"></div>
-            <div class="animate-pulse bg-gray-200 h-10 w-32 rounded-lg"></div>
-            <div class="animate-pulse bg-gray-200 h-10 w-32 rounded-lg"></div>
+        <!-- Header with League Selector -->
+        <div class="bg-white border-b border-gray-200 px-8 pt-6 pb-4">
+          <div class="flex items-center justify-between">
+            <h1 class="text-2xl font-bold text-gray-800">Sports</h1>
+            <div class="flex space-x-2" id="league-tabs">
+              <div class="animate-pulse bg-gray-200 h-10 w-32 rounded-lg"></div>
+              <div class="animate-pulse bg-gray-200 h-10 w-32 rounded-lg"></div>
+              <div class="animate-pulse bg-gray-200 h-10 w-32 rounded-lg"></div>
+            </div>
           </div>
         </div>
 
@@ -36,6 +34,16 @@ class SportsPage extends BasePage {
               <div class="animate-spin text-6xl mb-4">⚽</div>
               <p class="text-xl text-gray-600">Loading sports data...</p>
             </div>
+          </div>
+        </div>
+        
+        <!-- Game Detail Modal (hidden by default) -->
+        <div id="game-detail-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div class="bg-white rounded-2xl p-8 max-w-3xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div id="game-detail-content"></div>
+            <button onclick="window.hideGameDetail()" class="mt-6 px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
+              Close
+            </button>
           </div>
         </div>
       </div>
@@ -59,6 +67,10 @@ class SportsPage extends BasePage {
       // Render league tabs and content
       this.renderLeagueTabs();
       this.renderLeagueContent();
+      
+      // Setup global game detail functions
+      window.showGameDetail = (gameId) => this.showGameDetail(gameId);
+      window.hideGameDetail = () => this.hideGameDetail();
       
     } catch (error) {
       console.error('[SportsPage] Error loading sports data:', error);
@@ -125,15 +137,16 @@ class SportsPage extends BasePage {
     }
 
     // Render with two-column layout: standings left (wider), scores right (narrower)
+    // Calculate available height: maximize vertical space - reduced overhead for more content
     contentContainer.innerHTML = `
       <div class="grid gap-6 h-full" style="grid-template-columns: 60% 38%;">
         <!-- Left: Standings (wider) -->
-        <div id="standings-scroll" class="sports-scroll" style="max-height: calc(100vh - 280px); -webkit-overflow-scrolling: touch; touch-action: pan-y; cursor: grab;">
+        <div id="standings-scroll" class="sports-scroll" style="max-height: calc(100vh - 170px); overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; cursor: grab;">
           ${this.renderStandings(data.standings)}
         </div>
         
         <!-- Right: Scores (narrower) -->
-        <div id="scores-scroll" class="sports-scroll" style="max-height: calc(100vh - 280px); -webkit-overflow-scrolling: touch; touch-action: pan-y; cursor: grab;">
+        <div id="scores-scroll" class="sports-scroll" style="max-height: calc(100vh - 170px); overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; cursor: grab;">
           ${this.renderScoreboard(data.scoreboard)}
         </div>
       </div>
@@ -201,7 +214,7 @@ class SportsPage extends BasePage {
     };
 
     return `
-      <div class="bg-white rounded-lg shadow-sm p-3 hover:shadow-md transition-shadow ${isLive ? 'border-l-4 border-red-500' : 'border border-gray-200'}">
+      <div class="bg-white rounded-lg shadow-sm p-3 hover:shadow-md transition-shadow cursor-pointer ${isLive ? 'border-l-4 border-red-500' : 'border border-gray-200'}" onclick="window.showGameDetail('${game.id}')">
         ${isLive ? `
           <div class="flex items-center text-xs text-red-600 font-semibold mb-2">
             <span class="inline-block w-2 h-2 bg-red-600 rounded-full mr-2 animate-pulse"></span>
@@ -273,7 +286,7 @@ class SportsPage extends BasePage {
 
     return `
       <div>
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">Standings</h2>
+        <h2 class="text-xl font-bold text-gray-800 mb-3">Standings</h2>
         
         ${isNFL ? `
           <!-- NFL: 4 divisions per conference, 2 columns -->
@@ -300,8 +313,8 @@ class SportsPage extends BasePage {
     const conferenceName = divisions[0].conferenceName.split(' ')[0]; // "AFC" or "NFC"
     
     return `
-      <div class="mb-2">
-        <h3 class="text-lg font-bold text-gray-700 mb-1">${conferenceName}</h3>
+      <div class="mb-3">
+        <h3 class="text-base font-bold text-gray-700 mb-2">${conferenceName}</h3>
         <div class="grid grid-cols-2 gap-2">
           ${divisions.map(table => this.renderStandingsTable(table)).join('')}
         </div>
@@ -318,50 +331,50 @@ class SportsPage extends BasePage {
     return `
       <div>
         ${table.conferenceName ? `
-          <h3 class="text-sm font-semibold text-gray-700 mb-1">${table.conferenceName}</h3>
+          <h3 class="text-xs font-semibold text-gray-700 mb-1">${table.conferenceName}</h3>
         ` : ''}
         
         <div class="bg-white rounded-lg shadow overflow-hidden">
-          <table class="w-full" style="font-size: 0.7rem;">
+          <table class="w-full text-sm">
             <thead class="bg-gray-50 border-b border-gray-200">
               <tr>
-                ${isNFL ? '' : `<th class="px-1 py-1 text-left font-semibold text-gray-700">#</th>`}
-                <th class="px-1 py-1 text-left font-semibold text-gray-700">Team</th>
-                ${!isNFL ? `<th class="px-1 py-1 text-center font-semibold text-gray-700">GP</th>` : ''}
-                <th class="px-1 py-1 text-center font-semibold text-gray-700">W</th>
-                <th class="px-1 py-1 text-center font-semibold text-gray-700">L</th>
-                ${isNFL ? `<th class="px-1 py-1 text-center font-semibold text-gray-700">T</th>` : ''}
-                ${!isNFL && !hideGD ? `<th class="px-1 py-1 text-center font-semibold text-gray-700">D</th>` : ''}
-                ${!hideGD && !isNFL ? `<th class="px-1 py-1 text-center font-semibold text-gray-700">GD</th>` : ''}
-                ${isNFL ? `<th class="px-1 py-1 text-center font-semibold text-gray-700">PCT</th>` : ''}
-                ${isNFL ? `<th class="px-1 py-1 text-center font-semibold text-gray-700">STRK</th>` : ''}
-                ${!isNFL ? `<th class="px-1 py-1 text-center font-semibold text-gray-700">PTS</th>` : ''}
+                ${isNFL ? '' : `<th class="px-2 py-1.5 text-left font-semibold text-gray-700">#</th>`}
+                <th class="px-2 py-1.5 text-left font-semibold text-gray-700">Team</th>
+                ${!isNFL ? `<th class="px-2 py-1.5 text-center font-semibold text-gray-700">GP</th>` : ''}
+                <th class="px-2 py-1.5 text-center font-semibold text-gray-700">W</th>
+                <th class="px-2 py-1.5 text-center font-semibold text-gray-700">L</th>
+                ${isNFL ? `<th class="px-2 py-1.5 text-center font-semibold text-gray-700">T</th>` : ''}
+                ${!isNFL && !hideGD ? `<th class="px-2 py-1.5 text-center font-semibold text-gray-700">D</th>` : ''}
+                ${!hideGD && !isNFL ? `<th class="px-2 py-1.5 text-center font-semibold text-gray-700">GD</th>` : ''}
+                ${isNFL ? `<th class="px-2 py-1.5 text-center font-semibold text-gray-700">PCT</th>` : ''}
+                ${isNFL ? `<th class="px-2 py-1.5 text-center font-semibold text-gray-700">STRK</th>` : ''}
+                ${!isNFL ? `<th class="px-2 py-1.5 text-center font-semibold text-gray-700">PTS</th>` : ''}
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
               ${table.entries.map((entry, idx) => `
                 <tr class="hover:bg-gray-50 transition-colors">
-                  ${isNFL ? '' : `<td class="px-1 py-1 font-semibold text-gray-700">${entry.position || idx + 1}</td>`}
-                  <td class="px-1 py-1">
-                    <div class="flex items-center space-x-1">
-                      ${entry.team.logo ? `<img src="${entry.team.logo}" alt="${entry.team.name}" class="w-3 h-3 flex-shrink-0">` : ''}
-                      <span class="font-medium text-gray-900 truncate">${entry.team.abbreviation || entry.team.shortName}</span>
+                  ${isNFL ? '' : `<td class="px-2 py-1 font-semibold text-gray-700">${entry.position || idx + 1}</td>`}
+                  <td class="px-2 py-1">
+                    <div class="flex items-center space-x-2">
+                      ${entry.team.logo ? `<img src="${entry.team.logo}" alt="${entry.team.name}" class="w-5 h-5 flex-shrink-0">` : ''}
+                      <span class="font-medium text-gray-900 truncate">${entry.team.name}</span>
                     </div>
                   </td>
-                  ${!isNFL ? `<td class="px-1 py-1 text-center text-gray-600">${entry.stats.gamesPlayed || 0}</td>` : ''}
-                  <td class="px-1 py-1 text-center text-gray-600">${entry.stats.wins || 0}</td>
-                  <td class="px-1 py-1 text-center text-gray-600">${entry.stats.losses || 0}</td>
-                  ${isNFL ? `<td class="px-1 py-1 text-center text-gray-600">${entry.stats.ties || 0}</td>` : ''}
-                  ${!isNFL && !hideGD ? `<td class="px-1 py-1 text-center text-gray-600">${entry.stats.ties || 0}</td>` : ''}
+                  ${!isNFL ? `<td class="px-2 py-1 text-center text-gray-600">${entry.stats.gamesPlayed || 0}</td>` : ''}
+                  <td class="px-2 py-1 text-center text-gray-600">${entry.stats.wins || 0}</td>
+                  <td class="px-2 py-1 text-center text-gray-600">${entry.stats.losses || 0}</td>
+                  ${isNFL ? `<td class="px-2 py-1 text-center text-gray-600">${entry.stats.ties || 0}</td>` : ''}
+                  ${!isNFL && !hideGD ? `<td class="px-2 py-1 text-center text-gray-600">${entry.stats.ties || 0}</td>` : ''}
                   ${!hideGD && !isNFL ? `
-                    <td class="px-1 py-1 text-center font-medium ${
+                    <td class="px-2 py-1 text-center font-medium ${
                       entry.stats.pointDifferential > 0 ? 'text-green-600' : 
                       entry.stats.pointDifferential < 0 ? 'text-red-600' : 'text-gray-600'
                     }">${entry.stats.pointDifferential > 0 ? '+' : ''}${entry.stats.pointDifferential || 0}</td>
                   ` : ''}
-                  ${isNFL ? `<td class="px-1 py-1 text-center text-gray-600">${entry.stats.winPercent || '-'}</td>` : ''}
-                  ${isNFL ? `<td class="px-1 py-1 text-center text-gray-600">${entry.stats.streak || '-'}</td>` : ''}
-                  ${!isNFL ? `<td class="px-1 py-1 text-center font-bold text-blue-600">${entry.stats.points || 0}</td>` : ''}
+                  ${isNFL ? `<td class="px-2 py-1 text-center text-gray-600">${entry.stats.winPercent || '-'}</td>` : ''}
+                  ${isNFL ? `<td class="px-2 py-1 text-center text-gray-600">${entry.stats.streak || '-'}</td>` : ''}
+                  ${!isNFL ? `<td class="px-2 py-1 text-center font-bold text-blue-600">${entry.stats.points || 0}</td>` : ''}
                 </tr>
               `).join('')}
             </tbody>
@@ -402,6 +415,10 @@ class SportsPage extends BasePage {
     // Clean up touch scroll listeners
     this.touchScrollCleanups.forEach(cleanup => cleanup && cleanup());
     this.touchScrollCleanups = [];
+    
+    // Clean up global functions
+    window.showGameDetail = null;
+    window.hideGameDetail = null;
   }
 
   startAutoRefresh() {
@@ -417,6 +434,222 @@ class SportsPage extends BasePage {
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
       this.refreshInterval = null;
+    }
+  }
+
+  showGameDetail(gameId) {
+    // Find the game across all league data
+    let game = null;
+    let leagueKey = null;
+    
+    for (const key in this.leagueData) {
+      const data = this.leagueData[key];
+      if (data.scoreboard && data.scoreboard.events) {
+        game = data.scoreboard.events.find(e => e.id === gameId);
+        if (game) {
+          leagueKey = key;
+          break;
+        }
+      }
+    }
+
+    if (!game || !leagueKey) return;
+
+    const modal = document.getElementById('game-detail-modal');
+    const content = document.getElementById('game-detail-content');
+
+    // Show loading state
+    content.innerHTML = `
+      <div class="text-center py-12">
+        <div class="animate-spin text-6xl mb-4">⚽</div>
+        <p class="text-xl text-gray-600">Loading game details...</p>
+      </div>
+    `;
+    modal.classList.remove('hidden');
+
+    // Fetch detailed game information
+    sportsService.getGameDetails(leagueKey, gameId).then(details => {
+      this.renderGameDetailContent(game, details);
+    }).catch(error => {
+      console.error('[SportsPage] Error loading game details:', error);
+      content.innerHTML = `
+        <div class="text-center py-8">
+          <div class="text-4xl mb-4">⚠️</div>
+          <p class="text-red-600">Error loading game details</p>
+          <p class="text-sm text-gray-500 mt-2">${error.message}</p>
+        </div>
+      `;
+    });
+  }
+
+  renderGameDetailContent(game, details) {
+    const content = document.getElementById('game-detail-content');
+
+    const formatDateTime = (date) => {
+      return date.toLocaleString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    };
+
+    content.innerHTML = `
+      <div class="text-center mb-6">
+        ${game.isLive ? `
+          <div class="inline-flex items-center text-sm text-red-600 font-semibold mb-3 bg-red-50 px-4 py-2 rounded-full">
+            <span class="inline-block w-2 h-2 bg-red-600 rounded-full mr-2 animate-pulse"></span>
+            LIVE - ${game.statusText}
+          </div>
+        ` : game.isCompleted ? `
+          <div class="text-sm text-gray-600 font-semibold mb-3">${game.statusText}</div>
+        ` : `
+          <div class="text-sm text-gray-600 font-semibold mb-3">${formatDateTime(game.date)}</div>
+        `}
+      </div>
+
+      <!-- Teams & Score -->
+      <div class="grid grid-cols-3 gap-4 items-center mb-8">
+        <!-- Away Team -->
+        <div class="text-center">
+          ${game.awayTeam.logo ? `<img src="${game.awayTeam.logo}" alt="${game.awayTeam.name}" class="w-24 h-24 mx-auto mb-3">` : ''}
+          <h3 class="text-xl font-bold ${game.awayTeam.winner ? 'text-blue-600' : 'text-gray-800'}">${game.awayTeam.name}</h3>
+          ${game.awayTeam.record ? `<p class="text-sm text-gray-500 mt-1">${game.awayTeam.record}</p>` : ''}
+        </div>
+
+        <!-- Score -->
+        <div class="text-center">
+          ${game.isLive || game.isCompleted ? `
+            <div class="text-5xl font-bold text-gray-900">
+              ${game.awayTeam.score} - ${game.homeTeam.score}
+            </div>
+          ` : `
+            <div class="text-3xl font-bold text-gray-600">VS</div>
+          `}
+        </div>
+
+        <!-- Home Team -->
+        <div class="text-center">
+          ${game.homeTeam.logo ? `<img src="${game.homeTeam.logo}" alt="${game.homeTeam.name}" class="w-24 h-24 mx-auto mb-3">` : ''}
+          <h3 class="text-xl font-bold ${game.homeTeam.winner ? 'text-blue-600' : 'text-gray-800'}">${game.homeTeam.name}</h3>
+          ${game.homeTeam.record ? `<p class="text-sm text-gray-500 mt-1">${game.homeTeam.record}</p>` : ''}
+        </div>
+      </div>
+
+      <!-- Statistics (for completed/live games) -->
+      ${(game.isCompleted || game.isLive) && details.statistics && (details.statistics.away.length > 0 || details.statistics.home.length > 0) ? `
+        <div class="border-t border-gray-200 pt-6 mb-6">
+          <h4 class="text-lg font-bold text-gray-800 mb-4 text-center">Statistics</h4>
+          <div class="space-y-3">
+            ${this.renderGameStatistics(details.statistics.away, details.statistics.home)}
+          </div>
+        </div>
+      ` : ''}
+
+      <!-- Game Info -->
+      <div class="border-t border-gray-200 pt-6 space-y-3">
+        ${game.venue ? `
+          <div class="flex items-start">
+            <span class="text-2xl mr-3">📍</span>
+            <div>
+              <div class="font-semibold text-gray-700">Venue</div>
+              <div class="text-gray-600">${game.venue}</div>
+            </div>
+          </div>
+        ` : ''}
+        
+        ${details.attendance ? `
+          <div class="flex items-start">
+            <span class="text-2xl mr-3">👥</span>
+            <div>
+              <div class="font-semibold text-gray-700">Attendance</div>
+              <div class="text-gray-600">${details.attendance.toLocaleString()}</div>
+            </div>
+          </div>
+        ` : ''}
+        
+        ${game.broadcast ? `
+          <div class="flex items-start">
+            <span class="text-2xl mr-3">📺</span>
+            <div>
+              <div class="font-semibold text-gray-700">Broadcast</div>
+              <div class="text-gray-600">${game.broadcast}</div>
+            </div>
+          </div>
+        ` : ''}
+        
+        ${!game.isLive && !game.isCompleted ? `
+          <div class="flex items-start">
+            <span class="text-2xl mr-3">🕐</span>
+            <div>
+              <div class="font-semibold text-gray-700">Date & Time</div>
+              <div class="text-gray-600">${formatDateTime(game.date)}</div>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }
+
+  renderGameStatistics(awayStats, homeStats) {
+    if (awayStats.length === 0 && homeStats.length === 0) {
+      return '<p class="text-center text-gray-500">No statistics available</p>';
+    }
+
+    // Create a map of stats by name
+    const statsMap = new Map();
+    
+    awayStats.forEach(stat => {
+      if (!statsMap.has(stat.name)) {
+        statsMap.set(stat.name, { away: stat, home: null });
+      }
+    });
+    
+    homeStats.forEach(stat => {
+      if (statsMap.has(stat.name)) {
+        statsMap.get(stat.name).home = stat;
+      } else {
+        statsMap.set(stat.name, { away: null, home: stat });
+      }
+    });
+
+    // Render each stat
+    return Array.from(statsMap.entries()).map(([statName, stats]) => {
+      if (!stats.away && !stats.home) return '';
+      
+      const awayValue = stats.away?.displayValue || '0';
+      const homeValue = stats.home?.displayValue || '0';
+      const label = stats.away?.label || stats.home?.label || statName;
+      
+      // For percentage stats, calculate which side has higher value
+      const awayNum = parseFloat(awayValue.replace(/[^0-9.-]/g, '')) || 0;
+      const homeNum = parseFloat(homeValue.replace(/[^0-9.-]/g, '')) || 0;
+      const total = awayNum + homeNum;
+      const awayPercent = total > 0 ? (awayNum / total) * 100 : 50;
+      const homePercent = total > 0 ? (homeNum / total) * 100 : 50;
+
+      return `
+        <div class="stat-row">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-sm font-semibold ${awayNum > homeNum ? 'text-blue-600' : 'text-gray-600'}">${awayValue}</span>
+            <span class="text-xs font-medium text-gray-500 uppercase">${label}</span>
+            <span class="text-sm font-semibold ${homeNum > awayNum ? 'text-blue-600' : 'text-gray-600'}">${homeValue}</span>
+          </div>
+          <div class="flex h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div class="bg-gray-400 transition-all" style="width: ${awayPercent}%"></div>
+            <div class="bg-gray-600 transition-all" style="width: ${homePercent}%"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  hideGameDetail() {
+    const modal = document.getElementById('game-detail-modal');
+    if (modal) {
+      modal.classList.add('hidden');
     }
   }
 }
